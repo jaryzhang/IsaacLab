@@ -263,7 +263,8 @@ def image(
 
     # obtain the input image
     images = sensor.data.output[data_type]
-
+    # rgb_image_tensor = torch.tensor(images).float()
+    # print("shape :",rgb_image_tensor.shape)
     # depth image conversion
     if (data_type == "distance_to_camera") and convert_perspective_to_orthogonal:
         images = math_utils.orthogonalize_perspective_depth(images, sensor.data.intrinsic_matrices)
@@ -401,7 +402,6 @@ class image_features(ManagerTermBase):
         image_device = image_data.device
         # forward the images through the model
         features = self._inference_fn(self._model, image_data, **(inference_kwargs or {}))
-
         # move the features back to the image device
         return features.detach().to(image_device)
 
@@ -496,7 +496,6 @@ class image_features(ManagerTermBase):
             mean = torch.tensor([0.485, 0.456, 0.406], device=model_device).view(1, 3, 1, 1)
             std = torch.tensor([0.229, 0.224, 0.225], device=model_device).view(1, 3, 1, 1)
             image_proc = (image_proc - mean) / std
-
             # forward the image through the model
             return model(image_proc)
 

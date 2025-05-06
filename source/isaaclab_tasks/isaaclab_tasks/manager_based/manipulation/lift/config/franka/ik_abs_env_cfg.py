@@ -107,4 +107,5 @@ class FrankaTeddyBearLiftEnvCfg(FrankaCubeLiftEnvCfg):
         self.rewards.lifting_object = None
         self.rewards.object_goal_tracking = None
         self.rewards.object_goal_tracking_fine_grained = None
+        # self.rewards.total_reward = None
         self.observations.policy.object_position = None

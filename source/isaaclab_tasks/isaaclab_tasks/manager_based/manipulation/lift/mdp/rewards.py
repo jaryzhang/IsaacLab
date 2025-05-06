@@ -22,6 +22,9 @@ def object_is_lifted(
 ) -> torch.Tensor:
     """Reward the agent for lifting the object above the minimal height."""
     object: RigidObject = env.scene[object_cfg.name]
+    with open('output_formres4.txt', 'a') as f:
+        f.write(f"lift: {torch.mean(object.data.root_pos_w[:, 2]).item()}\n")
+    # print("lifting: ",torch.mean(15*(torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0))))
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0)
 
 
@@ -41,7 +44,10 @@ def object_ee_distance(
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
     # Distance of the end-effector to the object: (num_envs,)
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-
+    with open('output_formres4.txt', 'a') as f:
+        f.write(f"dis: {torch.mean(object_ee_distance).item()}\n")
+        
+    # print("reaching: ",torch.mean(1 - torch.tanh(object_ee_distance / std)))
     return 1 - torch.tanh(object_ee_distance / std)
 
 
@@ -65,3 +71,6 @@ def object_goal_distance(
     distance = torch.norm(des_pos_w - object.data.root_pos_w[:, :3], dim=1)
     # rewarded if the object is lifted above the threshold
     return (object.data.root_pos_w[:, 2] > minimal_height) * (1 - torch.tanh(distance / std))
+
+# def total_reward_func(env: ManagerBasedRLEnv,reward) -> torch.Tensor:
+#     return reward
