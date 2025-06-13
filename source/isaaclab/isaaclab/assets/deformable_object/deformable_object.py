@@ -386,7 +386,7 @@ class DeformableObject(AssetBase):
             if not hasattr(self, "target_visualizer"):
                 self.target_visualizer = VisualizationMarkers(self.cfg.visualizer_cfg)
             # set their visibility to true
-            self.target_visualizer.set_visibility(True)
+            self.target_visualizer.set_visibility(False)
         else:
             if hasattr(self, "target_visualizer"):
                 self.target_visualizer.set_visibility(False)

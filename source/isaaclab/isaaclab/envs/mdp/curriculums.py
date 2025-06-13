@@ -28,6 +28,7 @@ def modify_reward_weight(env: ManagerBasedRLEnv, env_ids: Sequence[int], term_na
         weight: The weight of the reward term.
         num_steps: The number of steps after which the change should be applied.
     """
+    # print(env.common_step_counter)
     if env.common_step_counter > num_steps:
         # obtain term settings
         term_cfg = env.reward_manager.get_term_cfg(term_name)

@@ -27,6 +27,32 @@ from . import mdp
 # Scene definition
 ##
 
+import omni.usd
+import omni
+from pxr import UsdShade, Sdf, Gf
+
+def apply_wood_material_to_ground(ground_path="/World/GroundPlane"):
+    stage = omni.usd.get_context().get_stage()
+    ground_prim = stage.GetPrimAtPath(ground_path)
+
+    # 材质路径
+    material_path = "/World/Materials/WoodMaterial"
+    material = UsdShade.Material.Define(stage, material_path)
+
+    # 创建 PBR shader
+    shader = UsdShade.Shader.Define(stage, material_path + "/Shader")
+    shader.CreateIdAttr("OmniPBR")
+
+    # 设置棕色基础色
+    shader.CreateInput("diffuse_color_constant", Sdf.ValueTypeNames.Float3).Set(Gf.Vec3f(0.4, 0.25, 0.1))
+    shader.CreateInput("roughness_constant", Sdf.ValueTypeNames.Float).Set(0.6)
+    shader.CreateInput("metallic_constant", Sdf.ValueTypeNames.Float).Set(0.05)
+
+    # 输出连接
+    material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+
+    # 材质绑定
+    UsdShade.MaterialBindingAPI(ground_prim).Bind(material)
 
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
@@ -47,6 +73,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Table",
         init_state=AssetBaseCfg.InitialStateCfg(pos=[0.5, 0, 0], rot=[0.707, 0, 0, 0.707]),
         spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
+        
+        # spawn=UsdFileCfg(usd_path=f"/home/roborock/IsaacLab/new_table.usd"),
     )
 
     # plane
@@ -76,7 +104,7 @@ class CommandsCfg:
         asset_name="robot",
         body_name=MISSING,  # will be set by agent env cfg
         resampling_time_range=(5.0, 5.0),
-        debug_vis=True,
+        debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
             pos_x=(0.4, 0.6), pos_y=(-0.25, 0.25), pos_z=(0.25, 0.5), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
         ),
@@ -126,7 +154,7 @@ class EventCfg:
         params={
             "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
             "velocity_range": {},
-            "asset_cfg": SceneEntityCfg("object", body_names="Object"),
+            "asset_cfg": SceneEntityCfg("object", body_names="Cube"),
         },
     )
 
@@ -138,6 +166,7 @@ class RewardsCfg:
     reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
 
     lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=15.0)
+    # lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=1.0)
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
@@ -171,17 +200,25 @@ class TerminationsCfg:
         func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
     )
 
+    # object_target = DoneTerm(
+    #     func=mdp.object_target,
+    #     params={
+    #         "object_cfg": SceneEntityCfg("object"),
+    #         "ee_frame_cfg": SceneEntityCfg("ee_frame"),
+    #     },
+    # )
+
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
     # action_rate = CurrTerm(
-    #     func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
+    #     func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 40000}
     # )
 
     # joint_vel = CurrTerm(
-    #     func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
+    #     func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 40000}
     # )
     pass
 
@@ -220,3 +257,9 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         self.sim.physx.gpu_found_lost_aggregate_pairs_capacity = 1024 * 1024 * 4
         self.sim.physx.gpu_total_aggregate_pairs_capacity = 16 * 1024
         self.sim.physx.friction_correlation_distance = 0.00625
+    
+    # offset=TiledCameraCfg.OffsetCfg(pos=(2.9, 0.0, 2), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+    #     data_types=["rgb"],
+    #     spawn=sim_utils.PinholeCameraCfg(
+    #         focal_length=33.9, focus_distance=400.0, horizontal_aperture=13.2, clipping_range=(0.1, 20.0)
+    #     ),

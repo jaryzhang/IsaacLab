@@ -148,6 +148,7 @@ class RlGamesVecEnvWrapper(IVecEnv):
             )
         # note: maybe should check if we are a sub-set of the actual space. don't do it right now since
         #   in ManagerBasedRLEnv we are setting action space as (-inf, inf).
+        # print("policy_obs_space: ",policy_obs_space.shape)
         return gym.spaces.Box(-self._clip_obs, self._clip_obs, policy_obs_space.shape)
 
     @property

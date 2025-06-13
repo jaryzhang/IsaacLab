@@ -22,8 +22,8 @@ def object_is_lifted(
 ) -> torch.Tensor:
     """Reward the agent for lifting the object above the minimal height."""
     object: RigidObject = env.scene[object_cfg.name]
-    with open('output_formres4.txt', 'a') as f:
-        f.write(f"lift: {torch.mean(object.data.root_pos_w[:, 2]).item()}\n")
+    # with open('output_formres5.txt', 'a') as f:
+    #     f.write(f"lift: {torch.mean(object.data.root_pos_w[:, 2]).item()}\n")
     # print("lifting: ",torch.mean(15*(torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0))))
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0)
 
@@ -44,8 +44,8 @@ def object_ee_distance(
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
     # Distance of the end-effector to the object: (num_envs,)
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-    with open('output_formres4.txt', 'a') as f:
-        f.write(f"dis: {torch.mean(object_ee_distance).item()}\n")
+    # with open('output_formres5.txt', 'a') as f:
+    #     f.write(f"dis: {torch.mean(object_ee_distance).item()}\n")
         
     # print("reaching: ",torch.mean(1 - torch.tanh(object_ee_distance / std)))
     return 1 - torch.tanh(object_ee_distance / std)

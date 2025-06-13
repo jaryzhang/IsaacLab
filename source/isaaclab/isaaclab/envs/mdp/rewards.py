@@ -157,7 +157,14 @@ def joint_vel_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntity
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
+    # with open('output_652.txt', 'a') as f:
+    #     f.write(f"joint_vel_l2 : {torch.mean(torch.sum(torch.square(asset.data.joint_vel[:, asset_cfg.joint_ids]), dim=1)).item()}\n")
+    # print("joint_vel_l2 :",torch.mean(torch.sum(torch.square(asset.data.joint_vel[:, asset_cfg.joint_ids]), dim=1)).item())
+    # vel = asset.data.joint_vel[:, asset_cfg.joint_ids]
+    # re = 1 - torch.tanh(5 * torch.linalg.norm(vel, axis=1))
+    # return re
     return torch.sum(torch.square(asset.data.joint_vel[:, asset_cfg.joint_ids]), dim=1)
+    
 
 
 def joint_acc_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
@@ -244,6 +251,9 @@ def applied_torque_limits(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Sc
 
 def action_rate_l2(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
+    # with open('output_652.txt', 'a') as f:
+    #     f.write(f"action_rate_l2 : {torch.mean(torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)).item()}\n")
+    # print("WARNING: action_rate_l2 :",torch.mean(torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)).item())
     return torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)
 
 

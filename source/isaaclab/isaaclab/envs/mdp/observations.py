@@ -118,6 +118,11 @@ def joint_pos_rel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityC
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
+    # with open('output_5142.txt', 'a') as f:
+    #     f.write(f"obs1 m: {(asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]).mean().item()}\n")
+    #     f.write(f"obs1 s: {(asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]).std().item()}\n")
+    # print("obs1 m: ",(asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]).mean().item())
+    # print("obs1 s: ",(asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]).std().item())
     return asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
 
 
@@ -154,6 +159,11 @@ def joint_vel_rel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityC
     """
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
+    # with open('output_5142.txt', 'a') as f:
+    #     f.write(f"obs2 m: {(asset.data.joint_vel[:, asset_cfg.joint_ids] - asset.data.default_joint_vel[:, asset_cfg.joint_ids]).mean().item()}\n")
+    #     f.write(f"obs2 s: {(asset.data.joint_vel[:, asset_cfg.joint_ids] - asset.data.default_joint_vel[:, asset_cfg.joint_ids]).std().item()}\n")
+    # print("obs2 m:",(asset.data.joint_vel[:, asset_cfg.joint_ids] - asset.data.default_joint_vel[:, asset_cfg.joint_ids]).mean().item())
+    # print("obs2 s:",(asset.data.joint_vel[:, asset_cfg.joint_ids] - asset.data.default_joint_vel[:, asset_cfg.joint_ids]).std().item())
     return asset.data.joint_vel[:, asset_cfg.joint_ids] - asset.data.default_joint_vel[:, asset_cfg.joint_ids]
 
 
@@ -402,7 +412,13 @@ class image_features(ManagerTermBase):
         image_device = image_data.device
         # forward the images through the model
         features = self._inference_fn(self._model, image_data, **(inference_kwargs or {}))
+        # with open('output_5142.txt', 'a') as f:
+        #     f.write(f"obs6 m: {(features.detach().mean().item())}\n")
+        #     f.write(f"obs6 s: {(features.detach().std().item())}\n")
+        # print("obs6 m:",(features.detach().mean().item()))
+        # print("obs6 s:",(features.detach().std().item()))
         # move the features back to the image device
+        # features = features*1000
         return features.detach().to(image_device)
 
     """
@@ -515,8 +531,18 @@ def last_action(env: ManagerBasedEnv, action_name: str | None = None) -> torch.T
     entire action tensor is returned.
     """
     if action_name is None:
+        # with open('output_5142.txt', 'a') as f:
+        #     f.write(f"obs5 m: {(env.action_manager.action).mean().item()}\n")
+        #     f.write(f"obs5 s: {(env.action_manager.action).std().item()}\n")
+        # print("obs5 m:",(env.action_manager.action).mean().item())
+        # print("obs5 s:",(env.action_manager.action).std().item())
         return env.action_manager.action
     else:
+        # with open('output_5142.txt', 'a') as f:
+        #     f.write(f"obs5 m: {(env.action_manager.get_term(action_name).raw_actions).mean().item()}\n")
+        #     f.write(f"obs5 s: {(env.action_manager.get_term(action_name).raw_actions).std().item()}\n")
+        # print("obs5 m:",(env.action_manager.get_term(action_name).raw_actions).mean().item())
+        # print("obs5 s:",(env.action_manager.get_term(action_name).raw_actions).std().item())
         return env.action_manager.get_term(action_name).raw_actions
 
 
@@ -527,4 +553,10 @@ Commands.
 
 def generated_commands(env: ManagerBasedRLEnv, command_name: str) -> torch.Tensor:
     """The generated command from command term in the command manager with the given name."""
+
+    # with open('output_5142.txt', 'a') as f:
+    #     f.write(f"obs4 m: {(env.command_manager.get_command(command_name)).mean().item()}\n")
+    #     f.write(f"obs4 s: {(env.command_manager.get_command(command_name)).std().item()}\n")
+    # print("obs4 m:",(env.command_manager.get_command(command_name)).mean().item())
+    # print("obs4 s:",(env.command_manager.get_command(command_name)).std().item())
     return env.command_manager.get_command(command_name)

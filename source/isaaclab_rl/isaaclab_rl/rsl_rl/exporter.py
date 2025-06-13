@@ -157,15 +157,28 @@ class _OnnxPolicyExporter(torch.nn.Module):
                 dynamic_axes={},
             )
         else:
-            obs = torch.zeros(1, self.actor[0].in_features)
-            torch.onnx.export(
-                self,
-                obs,
-                os.path.join(path, filename),
-                export_params=True,
-                opset_version=11,
-                verbose=self.verbose,
-                input_names=["obs"],
-                output_names=["actions"],
-                dynamic_axes={},
-            )
+            # obs = torch.zeros(1, self.actor[0].in_features)
+            # torch.onnx.export(
+            #     self,
+            #     obs,
+            #     os.path.join(path, filename),
+            #     export_params=True,
+            #     opset_version=11,
+            #     verbose=self.verbose,
+            #     input_names=["obs"],
+            #     output_names=["actions"],
+            #     dynamic_axes={},
+            # )
+
+            dummy_input = torch.zeros(1, 3, 128, 128)
+        torch.onnx.export(
+            self,
+            dummy_input,
+            os.path.join(path, filename),
+            export_params=True,
+            opset_version=11,
+            verbose=self.verbose,
+            input_names=["obs"],
+            output_names=["actions"],
+            dynamic_axes={},
+        )
