@@ -20,6 +20,10 @@ from isaaclab.managers import SceneEntityCfg
 from isaaclab.managers.manager_base import ManagerTermBase
 from isaaclab.managers.manager_term_cfg import ObservationTermCfg
 from isaaclab.sensors import Camera, Imu, RayCaster, RayCasterCamera, TiledCamera
+import numpy as np
+import cv2
+import os
+import time
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
@@ -278,13 +282,40 @@ def image(
     # depth image conversion
     if (data_type == "distance_to_camera") and convert_perspective_to_orthogonal:
         images = math_utils.orthogonalize_perspective_depth(images, sensor.data.intrinsic_matrices)
+    # obs_np = images.squeeze(0).cpu().numpy() 
+    # # act_np = actions.cpu().numpy() 
+    # # os.makedirs(act_log_dir, exist_ok=True)
+    # # np.save(os.path.join(act_log_dir, f"act_step_{t}.npy"), act_np)
+    # if obs_np.dtype == np.float32 or obs_np.max() <= 1.0:
+    #     obs_np = (obs_np * 255).astype(np.uint8)
 
+    # # RGB 转 BGR 再保存
+    # obs_bgr = cv2.cvtColor(obs_np, cv2.COLOR_RGB2BGR)
+    # os.makedirs("IMAGES5", exist_ok=True)
+    # cv2.imwrite(f"./IMAGES5/observation_{time.time()}.png", obs_bgr)
     # rgb/depth image normalization
     if normalize:
+        # print(f"Normalizing images of type: {data_type}")
         if data_type == "rgb":
             images = images.float() / 255.0
             mean_tensor = torch.mean(images, dim=(1, 2), keepdim=True)
             images -= mean_tensor
+            
+            # images = images.float()
+
+            # obs_np2 = images.squeeze(0).cpu().numpy() 
+            # # act_np = actions.cpu().numpy() 
+            # # os.makedirs(act_log_dir, exist_ok=True)
+            # # np.save(os.path.join(act_log_dir, f"act_step_{t}.npy"), act_np)
+            # if obs_np2.dtype == np.float32 or obs_np2.max() <= 1.0:
+            #     obs_np2 = (obs_np2 * 255).astype(np.uint8)
+
+            # # RGB 转 BGR 再保存
+            # obs_bgr2 = cv2.cvtColor(obs_np2, cv2.COLOR_RGB2BGR)
+            # os.makedirs("IMAGES6", exist_ok=True)
+            # cv2.imwrite(f"./IMAGES6/observation_{time.time()}.png", obs_bgr2)
+            
+            pass
         elif "distance_to" in data_type or "depth" in data_type:
             images[images == float("inf")] = 0
 

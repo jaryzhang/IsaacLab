@@ -20,6 +20,7 @@ from isaaclab.sensors.frame_transformer.frame_transformer_cfg import FrameTransf
 from isaaclab.sim.spawners.from_files.from_files_cfg import GroundPlaneCfg, UsdFileCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
+from isaaclab.sensors import TiledCameraCfg,CameraCfg
 
 from . import mdp
 
@@ -27,32 +28,6 @@ from . import mdp
 # Scene definition
 ##
 
-import omni.usd
-import omni
-from pxr import UsdShade, Sdf, Gf
-
-def apply_wood_material_to_ground(ground_path="/World/GroundPlane"):
-    stage = omni.usd.get_context().get_stage()
-    ground_prim = stage.GetPrimAtPath(ground_path)
-
-    # 材质路径
-    material_path = "/World/Materials/WoodMaterial"
-    material = UsdShade.Material.Define(stage, material_path)
-
-    # 创建 PBR shader
-    shader = UsdShade.Shader.Define(stage, material_path + "/Shader")
-    shader.CreateIdAttr("OmniPBR")
-
-    # 设置棕色基础色
-    shader.CreateInput("diffuse_color_constant", Sdf.ValueTypeNames.Float3).Set(Gf.Vec3f(0.4, 0.25, 0.1))
-    shader.CreateInput("roughness_constant", Sdf.ValueTypeNames.Float).Set(0.6)
-    shader.CreateInput("metallic_constant", Sdf.ValueTypeNames.Float).Set(0.05)
-
-    # 输出连接
-    material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
-
-    # 材质绑定
-    UsdShade.MaterialBindingAPI(ground_prim).Bind(material)
 
 @configclass
 class ObjectTableSceneCfg(InteractiveSceneCfg):
@@ -73,8 +48,6 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         prim_path="{ENV_REGEX_NS}/Table",
         init_state=AssetBaseCfg.InitialStateCfg(pos=[0.5, 0, 0], rot=[0.707, 0, 0, 0.707]),
         spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
-        
-        # spawn=UsdFileCfg(usd_path=f"/home/roborock/IsaacLab/new_table.usd"),
     )
 
     # plane
@@ -88,6 +61,28 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     light = AssetBaseCfg(
         prim_path="/World/light",
         spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=3000.0),
+    )
+
+    tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Camera_1",
+        # offset=TiledCameraCfg.OffsetCfg(pos=(1.5, 0, 0.2), rot=(0,0,0,-1), convention="world"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(1.66, 0.0, 1.12), rot=((0.63004, 0.32102, 0.32102, 0.63004)), convention="opengl"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0.3, 0, 0.6), rot=(0,-0.4332,0,0.9013), convention="world"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(1.3, 0.0, 0.9), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+        # data_types=["rgb"],
+        # spawn=sim_utils.PinholeCameraCfg(
+        #     focal_length=48.9, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        # ),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=77.9, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        ),
+        # spawn=sim_utils.PinholeCameraCfg(
+        #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        # ),
+        width=128,
+        height=128,
     )
 
 
@@ -106,7 +101,20 @@ class CommandsCfg:
         resampling_time_range=(5.0, 5.0),
         debug_vis=False,
         ranges=mdp.UniformPoseCommandCfg.Ranges(
-            pos_x=(0.4, 0.6), pos_y=(-0.25, 0.25), pos_z=(0.25, 0.5), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
+            # pos_x=(0.4, 0.6), pos_y=(-0.25, 0.25), pos_z=(0.25, 0.5), roll=(0.0, 0.0), pitch=(0.0, 0.0), yaw=(0.0, 0.0)
+            # pos_x=(0.25, 0.35),
+            # pos_y=(-0.05, 0.05),
+            # pos_z=(0.25, 0.5),
+            # roll=(0.0, 0.0),
+            # pitch=(0.0, 0.0),
+            # yaw=(0.0, 0.0),
+            
+            pos_x=(0.3, 0.3),
+            pos_y=(-0.01, 0.01),
+            pos_z=(0.1, 0.3),
+            roll=(0.0, 0.0),
+            pitch=(0.0, 0.0),
+            yaw=(0.0, 0.0),
         ),
     )
 
@@ -137,9 +145,105 @@ class ObservationsCfg:
         def __post_init__(self):
             self.enable_corruption = True
             self.concatenate_terms = True
+    '''
+    @configclass
+    class RGBCameraPolicyCfg(ObsGroup):
+        """Observations for policy group with RGB images."""
+
+        table_cam = ObsTerm(
+            func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "rgb", "normalize": False}
+        )
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+    '''
+
+
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
+    #rgb_camera: RGBCameraPolicyCfg = RGBCameraPolicyCfg()
+
+
+@configclass
+class RGBObservationsCfg:
+    """Observation specifications for the MDP."""
+
+    @configclass
+    class RGBCameraPolicyCfg(ObsGroup):
+        """Observations for policy group with RGB images."""
+
+        image = ObsTerm(func=mdp.image, params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"})
+
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = True
+
+    policy: ObsGroup = RGBCameraPolicyCfg()
+
+
+@configclass
+class DepthObservationsCfg:
+    """Observation specifications for the MDP."""
+
+    @configclass
+    class DepthCameraPolicyCfg(ObsGroup):
+        """Observations for policy group with depth images."""
+
+        image = ObsTerm(
+            func=mdp.image, params={"sensor_cfg": SceneEntityCfg("table_cam"), "data_type": "distance_to_camera"}
+        )
+
+    policy: ObsGroup = DepthCameraPolicyCfg()
+
+
+@configclass
+class ResNet18ObservationCfg:
+    """Observation specifications for the MDP."""
+
+    @configclass
+    class ResNet18FeaturesCameraPolicyCfg(ObsGroup):
+        """Observations for policy group with features extracted from RGB images with a frozen ResNet18."""
+
+        # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        # joint_vel = ObsTerm(func=mdp.joint_vel_rel)
+        # object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
+        # target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
+        # actions = ObsTerm(func=mdp.last_action)
+        image = ObsTerm(
+            func=mdp.image,
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"},
+        )
+
+        # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+
+        # def __post_init__(self):
+        #     self.enable_corruption = False
+        #     self.concatenate_terms = False
+
+    policy: ObsGroup = ResNet18FeaturesCameraPolicyCfg()
+
+
+@configclass
+class TheiaTinyObservationCfg:
+    """Observation specifications for the MDP."""
+
+    @configclass
+    class TheiaTinyFeaturesCameraPolicyCfg(ObsGroup):
+        """Observations for policy group with features extracted from RGB images with a frozen Theia-Tiny Transformer"""
+
+        image = ObsTerm(
+            func=mdp.image_features,
+            params={
+                "sensor_cfg": SceneEntityCfg("table_cam"),
+                "data_type": "rgb",
+                "model_name": "theia-tiny-patch16-224-cddsv",
+                "model_device": "cuda:0",
+            },
+        )
+
+    policy: ObsGroup = TheiaTinyFeaturesCameraPolicyCfg()
 
 
 @configclass
@@ -152,9 +256,19 @@ class EventCfg:
         func=mdp.reset_root_state_uniform,
         mode="reset",
         params={
-            "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
+            # "pose_range": {"x": (-0.1, 0.1), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
+            # "pose_range": {"x": (-0.05, 0.05), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
+
+            "pose_range": {
+                "x": (-0.05, 0.05),
+                "y": (-0.05, 0.05),
+                "z": (0.0, 0.0),
+            },
             "velocity_range": {},
-            "asset_cfg": SceneEntityCfg("object", body_names="Cube"),
+            "asset_cfg": SceneEntityCfg(
+                "object",
+                body_names="Cube",
+            ),
         },
     )
 
@@ -163,21 +277,31 @@ class EventCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
+    # reaching_object = RewTerm(func=mdp.object_ee_distance, params={"std": 0.1}, weight=1.0)
+    reaching_object = RewTerm(
+        func=mdp.object_ee_distance,
+        params={"std": 0.1},
+        weight=0.2,  # 2.0
+        # weight=20.0,
+    )
 
-    lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=15.0)
-    # lifting_object = RewTerm(func=mdp.object_is_lifted, params={"minimal_height": 0.04}, weight=1.0)
+    lifting_object = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.04},
+        weight=100.0,   # 1500  150
+    )
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
         params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=16.0,
+        weight=1.6, # 16.0
     )
 
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=5.0,
+        #params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.01, "command_name": "object_pose"},
+        weight=0.5,  # 5.0
     )
 
     # action penalty
@@ -197,30 +321,23 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
     object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum, params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")}
+        func=mdp.root_height_below_minimum,
+        params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")},
     )
-
-    # object_target = DoneTerm(
-    #     func=mdp.object_target,
-    #     params={
-    #         "object_cfg": SceneEntityCfg("object"),
-    #         "ee_frame_cfg": SceneEntityCfg("ee_frame"),
-    #     },
-    # )
 
 
 @configclass
 class CurriculumCfg:
     """Curriculum terms for the MDP."""
 
-    # action_rate = CurrTerm(
-    #     func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 40000}
-    # )
+    #action_rate = CurrTerm(
+    #    func=mdp.modify_reward_weight, params={"term_name": "action_rate", "weight": -1e-1, "num_steps": 10000}
+    #)
 
-    # joint_vel = CurrTerm(
-    #     func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 40000}
-    # )
-    pass
+    #joint_vel = CurrTerm(
+    #    func=mdp.modify_reward_weight, params={"term_name": "joint_vel", "weight": -1e-1, "num_steps": 10000}
+    #)
+
 
 ##
 # Environment configuration
@@ -232,9 +349,11 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=4096, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=256, env_spacing=2.5)
     # Basic settings
-    observations: ObservationsCfg = ObservationsCfg()
+    # observations: ObservationsCfg = ObservationsCfg()
+    #observations: TheiaTinyObservationCfg = TheiaTinyObservationCfg()
+    observations: ResNet18ObservationCfg = ResNet18ObservationCfg()
     actions: ActionsCfg = ActionsCfg()
     commands: CommandsCfg = CommandsCfg()
     # MDP settings
@@ -246,7 +365,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 2
+        self.decimation = 48   # 2 20 48
         self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
@@ -257,9 +376,3 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         self.sim.physx.gpu_found_lost_aggregate_pairs_capacity = 1024 * 1024 * 4
         self.sim.physx.gpu_total_aggregate_pairs_capacity = 16 * 1024
         self.sim.physx.friction_correlation_distance = 0.00625
-    
-    # offset=TiledCameraCfg.OffsetCfg(pos=(2.9, 0.0, 2), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
-    #     data_types=["rgb"],
-    #     spawn=sim_utils.PinholeCameraCfg(
-    #         focal_length=33.9, focus_distance=400.0, horizontal_aperture=13.2, clipping_range=(0.1, 20.0)
-    #     ),

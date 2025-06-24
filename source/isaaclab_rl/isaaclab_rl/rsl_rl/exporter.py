@@ -84,6 +84,11 @@ class _TorchPolicyExporter(torch.nn.Module):
 
     def forward(self, x):
         return self.actor(self.normalizer(x))
+    
+    # def forward(self, image, state):
+    #     image = self.normalizer(image)
+    #     # 假设 actor 接受图像和状态拼接后的特征，或者分支处理
+    #     return self.actor(image, state)
 
     @torch.jit.export
     def reset(self):
@@ -137,6 +142,14 @@ class _OnnxPolicyExporter(torch.nn.Module):
 
     def forward(self, x):
         return self.actor(self.normalizer(x))
+    
+    # def forward(self, x):
+    #     image_features = self.cnn_feature(x["image"])
+    #     state_features = self.state_encoder(x["joint_pos"])
+    #     # print("image_features : ",image_features.shape)
+    #     # print("state_features : ",state_features.shape)
+    #     observations = torch.cat((image_features, state_features), dim=1)
+    #     return self.actor(observations)
 
     def export(self, path, filename):
         self.to("cpu")
@@ -169,7 +182,8 @@ class _OnnxPolicyExporter(torch.nn.Module):
             #     output_names=["actions"],
             #     dynamic_axes={},
             # )
-
+        
+        #改动
             dummy_input = torch.zeros(1, 3, 128, 128)
         torch.onnx.export(
             self,
@@ -182,3 +196,19 @@ class _OnnxPolicyExporter(torch.nn.Module):
             output_names=["actions"],
             dynamic_axes={},
         )
+
+        #改动
+        #     obs = {"image":torch.zeros(1, 3, 128, 128),"joint_pos":torch.zeros(6,)}
+        # torch.onnx.export(
+        #     self,
+        #     obs,
+        #     os.path.join(path, filename),
+        #     export_params=True,
+        #     opset_version=11,
+        #     verbose=self.verbose,
+        #     input_names=["obs"],
+        #     output_names=["actions"],
+        #     dynamic_axes={},
+        # )
+
+

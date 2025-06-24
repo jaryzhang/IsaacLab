@@ -145,6 +145,8 @@ def main():
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
+
+            #改动
             obs = obs.permute(0, 3, 1, 2)
             actions = policy(obs)
             # env stepping

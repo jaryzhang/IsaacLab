@@ -28,10 +28,4 @@ def object_position_in_robot_root_frame(
     object_pos_b, _ = subtract_frame_transforms(
         robot.data.root_state_w[:, :3], robot.data.root_state_w[:, 3:7], object_pos_w
     )
-
-    # with open('output_5142.txt', 'a') as f:
-    #     f.write(f"obs3 m: {object_pos_b.mean().item()}\n")
-    #     f.write(f"obs3 s: {object_pos_b.std().item()}\n")
-    # print("obs3 m:",object_pos_b.mean().item())
-    # print("obs3 s:",object_pos_b.std().item())
     return object_pos_b
