@@ -216,11 +216,11 @@ class ResNet18ObservationCfg:
             params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"},
         )
 
-        # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
 
-        # def __post_init__(self):
-        #     self.enable_corruption = False
-        #     self.concatenate_terms = False
+        def __post_init__(self):
+            self.enable_corruption = False
+            self.concatenate_terms = False
 
     policy: ObsGroup = ResNet18FeaturesCameraPolicyCfg()
 
