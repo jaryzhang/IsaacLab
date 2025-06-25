@@ -51,15 +51,15 @@ def object_ee_distance(
     #     # print("****** WARNING ******")
     #     return torch.full((4096,), 1e-10).to('cuda')
     
-    # with open('output_formres1.txt', 'a') as f:
-    #    f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()},"
-    #            f"reward: {torch.mean(1 / (object_ee_distance * 10 / std + 1e-6)).item()}, std: {std}\n")
+    with open('output_formres1.txt', 'a') as f:
+       f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()},"
+               f"reward: {torch.mean(1 - torch.tanh(object_ee_distance / std)).item()}, std: {std}\n")
 
     #with open('output_formres1.txt', 'a') as f:
     #    f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()}\n")
 
     # return 1 - torch.tanh(object_ee_distance / std)
-    return 1 - torch.tanh(object_ee_distance)
+    return 1 - torch.tanh(object_ee_distance/std)
     
     #ratio = object_ee_distance / (std + 1e-6)  # 避免除零
     #return torch.exp(-torch.clamp(ratio, min=0, max=50))  # 防止exp(-inf)

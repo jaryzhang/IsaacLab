@@ -126,7 +126,7 @@ def main():
     except AttributeError:
         # version 2.2 and below
         policy_nn = ppo_runner.alg.actor_critic
-
+    print(f"[INFO] Policy neural network: {policy_nn}")
     # export policy to onnx/jit
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
     export_policy_as_jit(policy_nn, ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
@@ -147,8 +147,9 @@ def main():
             # agent stepping
 
             #改动
-            obs = obs.permute(0, 3, 1, 2)
-            actions = policy(obs)
+            image = obs["image"].permute(0, 3, 1, 2).contiguous()  # convert to (B, C, H, W)
+            joint_pos = obs["joint_pos"]
+            actions = policy(image,joint_pos)
             # env stepping
             obs, _, _, _ = env.step(actions)
         if args_cli.video:
