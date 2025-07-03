@@ -167,6 +167,8 @@ class InteractiveScene:
             # to filter collisions if replicate_physics is not enabled
             if not self.cfg.replicate_physics and self.cfg.filter_collisions:
                 self.filter_collisions(self._global_prim_paths)
+        
+        self.object_id = 0
 
     def clone_environments(self, copy_from_source: bool = False):
         """Creates clones of the environment ``/World/envs/env_0``.
@@ -633,9 +635,14 @@ class InteractiveScene:
         self._global_prim_paths = list()
         # parse the entire scene config and resolve regex
         for asset_name, asset_cfg in self.cfg.__dict__.items():
+            print(f"Adding asset '{asset_name}' with config: {asset_cfg}")
             # skip keywords
             # note: easier than writing a list of keywords: [num_envs, env_spacing, lazy_sensor_update]
             if asset_name in InteractiveSceneCfg.__dataclass_fields__ or asset_cfg is None:
+                print(f"Skipping asset '{asset_name}' as it is a keyword or None.")
+                continue
+            if asset_name == "object_id":
+                self.object_id = asset_cfg
                 continue
             # resolve regex
             if hasattr(asset_cfg, "prim_path"):

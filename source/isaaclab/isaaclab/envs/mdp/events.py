@@ -30,6 +30,10 @@ from isaaclab.actuators import ImplicitActuator
 from isaaclab.assets import Articulation, DeformableObject, RigidObject
 from isaaclab.managers import EventTermCfg, ManagerTermBase, SceneEntityCfg
 from isaaclab.terrains import TerrainImporter
+from isaaclab.assets import RigidObjectCfg
+from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
+from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
+from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv
@@ -825,7 +829,7 @@ def reset_root_state_uniform(
     env_ids: torch.Tensor,
     pose_range: dict[str, tuple[float, float]],
     velocity_range: dict[str, tuple[float, float]],
-    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+    asset_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")],
 ):
     """Reset the asset root state to a random position and velocity uniformly within the given ranges.
 
@@ -841,29 +845,47 @@ def reset_root_state_uniform(
     ``(min, max)``. If the dictionary does not contain a key, the position or velocity is set to zero for that axis.
     """
     # extract the used quantities (to enable type-hinting)
-    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
+    cur_asset = env.scene[asset_cfg[env.scene.object_id].name]
+    if env.scene.object_id == 0:
+        # if the first asset is being reset, the second asset is the other one
+        other_asset = env.scene[asset_cfg[1].name]
+        env.scene.object_id = 1  # switch to the second asset for the next reset
+    else:
+        # if the second asset is being reset, the first asset is the other one  
+        other_asset = env.scene[asset_cfg[0].name]
+        env.scene.object_id = 0  # switch to the first asset for the next reset
     # get default root state
-    root_states = asset.data.default_root_state[env_ids].clone()
-
+    root_states = other_asset.data.default_root_state[env_ids].clone()
+    if env.scene.object_id == 1:
+        root_states[:, 1] = 0
+    # print("root_states", root_states)
     # poses
     range_list = [pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
-    ranges = torch.tensor(range_list, device=asset.device)
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=asset.device)
+    ranges = torch.tensor(range_list, device=other_asset.device)
+    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=other_asset.device)
 
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids] + rand_samples[:, 0:3]
     orientations_delta = math_utils.quat_from_euler_xyz(rand_samples[:, 3], rand_samples[:, 4], rand_samples[:, 5])
     orientations = math_utils.quat_mul(root_states[:, 3:7], orientations_delta)
+    # print("positions", positions)
+    # print("orientations", orientations)
+    # print("positions shape", positions.shape)
+    # print("orientations shape", orientations.shape)
     # velocities
     range_list = [velocity_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
-    ranges = torch.tensor(range_list, device=asset.device)
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=asset.device)
+    ranges = torch.tensor(range_list, device=other_asset.device)
+    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=other_asset.device)
 
     velocities = root_states[:, 7:13] + rand_samples
-
+    # print("velocities", velocities)
+    # print("velocities shape", velocities.shape)
     # set into the physics simulation
-    asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
-    asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
-
+    other_asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
+    other_asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
+    cur_asset.write_root_pose_to_sim(
+        torch.cat([torch.tensor([-0.28, -0.2, 0.0],device=cur_asset.device).repeat(len(env_ids),1), torch.tensor([1,0,0,0],device=cur_asset.device).repeat(len(env_ids),1)], dim=-1), env_ids=env_ids
+    )  # also set the pose of the current asset to the same position and orientation
+    cur_asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
 
 def reset_root_state_with_random_orientation(
     env: ManagerBasedEnv,
@@ -1121,6 +1143,40 @@ def reset_scene_to_default(env: ManagerBasedEnv, env_ids: torch.Tensor):
         # obtain default and set into the physics simulation
         nodal_state = deformable_object.data.default_nodal_state_w[env_ids].clone()
         deformable_object.write_nodal_state_to_sim(nodal_state, env_ids=env_ids)
+
+
+# def switch_object(env: ManagerBasedEnv, env_ids: torch.Tensor):
+#     print("Switching object in the scene...")
+#     print(f"Current object ID: {env.scene.object_id}")
+#     print("env.scene.object_id[env_ids] :",env.scene["object"])
+#     asset : RigidObject = env.scene["object"]
+#     if env.scene.object_id == 0:
+#         # switch to the second object
+#         env.scene.object_id = 1
+#         asset.cfg = RigidObjectCfg(
+#             prim_path="{ENV_REGEX_NS}/Object",
+#             #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+#             init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0, 0], rot=[1, 0, 0, 0]),
+#             spawn=UsdFileCfg(
+#                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+#                 # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",
+#                 scale=(0.14, 0.14, 0.14),
+
+#                 rigid_props=RigidBodyPropertiesCfg(
+#                     solver_position_iteration_count=16,
+#                     solver_velocity_iteration_count=16,
+#                     max_angular_velocity=1000.0,
+#                     max_linear_velocity=1000.0,
+#                     max_depenetration_velocity=5.0,
+#                     disable_gravity=False,
+#                 ),
+#             ),debug_vis=False
+#         )
+#         env.scene.reset()
+#     else:
+#         # switch to the first object
+#         env.scene.object_id = 0
+#     pass
 
 
 class randomize_visual_texture_material(ManagerTermBase):

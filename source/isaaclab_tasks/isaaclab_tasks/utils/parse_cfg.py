@@ -169,6 +169,8 @@ def get_checkpoint_path(
     # check if runs present in directory
     try:
         # find all runs in the directory that math the regex expression
+        print("#" * 20)
+        print(log_path, run_dir)
         runs = [
             os.path.join(log_path, run) for run in os.scandir(log_path) if run.is_dir() and re.match(run_dir, run.name)
         ]

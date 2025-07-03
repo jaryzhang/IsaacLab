@@ -116,7 +116,7 @@ def joint_pos(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("
     return asset.data.joint_pos[:, asset_cfg.joint_ids]
 
 
-def joint_pos_rel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),object_cfg: SceneEntityCfg = SceneEntityCfg("object")) -> torch.Tensor:
+def joint_pos_rel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),object_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")]) -> torch.Tensor:
     """The joint positions of the asset w.r.t. the default joint positions.
 
     Note: Only the joints configured in :attr:`asset_cfg.joint_ids` will have their positions returned.
@@ -124,7 +124,7 @@ def joint_pos_rel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityC
     # extract the used quantities (to enable type-hinting)
     asset: Articulation = env.scene[asset_cfg.name]
     robot: RigidObject = env.scene[robot_cfg.name]
-    object: RigidObject = env.scene[object_cfg.name]
+    object = env.scene[object_cfg[env.scene.object_id].name]
     object_pos_w = object.data.root_pos_w[:, :3]
     object_pos_b, _ = subtract_frame_transforms(
         robot.data.root_state_w[:, :3], robot.data.root_state_w[:, 3:7], object_pos_w
@@ -141,10 +141,10 @@ def joint_pos_rel(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityC
     joint_pos_rel = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]  # shape: [num_envs, num_joints]
 
     # concatenate along last dimension
-    obs = torch.cat([joint_pos_rel, object_pos_b], dim=-1) 
+    # obs = torch.cat([joint_pos_rel, object_pos_b], dim=-1) 
     
-    return obs
-    # return asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
+    # return obs
+    return asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
 
 
 def joint_pos_limit_normalized(

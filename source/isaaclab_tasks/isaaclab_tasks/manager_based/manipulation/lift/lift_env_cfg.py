@@ -41,7 +41,9 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # end-effector sensor: will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg
-    object: RigidObjectCfg | DeformableObjectCfg = MISSING
+    object1: RigidObjectCfg | DeformableObjectCfg = MISSING
+    object2: RigidObjectCfg | DeformableObjectCfg = MISSING
+    object_id :int=0
 
     # Table
     table = AssetBaseCfg(
@@ -73,10 +75,12 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=48.9, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         # ),
-        offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.05), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
-            focal_length=77.9, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+            focal_length=35.4, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         ),
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
@@ -136,7 +140,7 @@ class ObservationsCfg:
     class PolicyCfg(ObsGroup):
         """Observations for policy group."""
 
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        joint_pos = ObsTerm(func=mdp.joint_pos_rel,params={"object_cfg": SceneEntityCfg("object1")})
         joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
         target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
@@ -199,13 +203,12 @@ class DepthObservationsCfg:
 
 
 @configclass
-class ResNet18ObservationCfg:
+class ResNet18ObservationCfg():
     """Observation specifications for the MDP."""
 
     @configclass
     class ResNet18FeaturesCameraPolicyCfg(ObsGroup):
         """Observations for policy group with features extracted from RGB images with a frozen ResNet18."""
-
         joint_pos = ObsTerm(func=mdp.joint_pos_rel)
         # joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         # object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
@@ -265,12 +268,12 @@ class EventCfg:
                 "z": (0.0, 0.0),
             },
             "velocity_range": {},
-            "asset_cfg": SceneEntityCfg(
-                "object",
-                body_names="Cube",
-            ),
         },
     )
+
+    # switch_object = EventTerm(
+    #     func=mdp.switch_object,
+    #     mode="reset")
 
 
 @configclass
@@ -281,14 +284,14 @@ class RewardsCfg:
     reaching_object = RewTerm(
         func=mdp.object_ee_distance,
         params={"std": 0.1},
-        weight=0.2,  # 2.0
+        weight=20,  # 2.0
         # weight=20.0,
     )
 
     lifting_object = RewTerm(
         func=mdp.object_is_lifted,
         params={"minimal_height": 0.04},
-        weight=100.0,   # 1500  150
+        weight=500.0,   # 1500  150
     )
 
     object_goal_tracking = RewTerm(
@@ -320,10 +323,10 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    object_dropping = DoneTerm(
-        func=mdp.root_height_below_minimum,
-        params={"minimum_height": -0.05, "asset_cfg": SceneEntityCfg("object")},
-    )
+    # object_dropping = DoneTerm(
+    #     func=mdp.root_height_below_minimum,
+    #     params={"minimum_height": -0.05, "object_cfg": [SceneEntityCfg("object1"),SceneEntityCfg("object2")]},
+    # )
 
 
 @configclass
@@ -349,7 +352,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=256, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=128, env_spacing=2.5)
     # Basic settings
     # observations: ObservationsCfg = ObservationsCfg()
     #observations: TheiaTinyObservationCfg = TheiaTinyObservationCfg()
@@ -365,7 +368,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 48   # 2 20 48
+        self.decimation = 20   # 2 20 48
         self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
