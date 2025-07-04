@@ -45,6 +45,11 @@ def object_ee_distance(
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
     object1 = env.scene[object_cfg[0].name]
     object2 = env.scene[object_cfg[1].name]
+    # print("ee_w: ", ee_w[0])
+    # print("object1 pos: ", object1.data.root_pos_w[0])
+    # print("object2 pos: ", object2.data.root_pos_w[0])
+    # print("object_ee_distance: ", object_ee_distance[0])
+    # print("object_ee_distance: ", object_ee_distance)
     dis1 = torch.norm(object1.data.root_pos_w - ee_w, dim=1)
     dis2 = torch.norm(object2.data.root_pos_w - ee_w, dim=1)
 
@@ -53,9 +58,9 @@ def object_ee_distance(
     # print("name cur: ", object_cfg[env.scene.object_id].name)
     # print("cur pos1 :",env.scene[object_cfg[0].name].data.root_pos_w[0])
     # print("cur pos2 :",env.scene[object_cfg[1].name].data.root_pos_w[0])
-    print("cur dis 1: ", torch.mean(dis1).item())
-    print("cur dis 2: ", torch.mean(dis2).item())
-    print("cur dis  : ", torch.mean(object_ee_distance).item())
+    # print("cur dis 1: ", torch.mean(dis1).item())
+    # print("cur dis 2: ", torch.mean(dis2).item())
+    # print("cur dis  : ", torch.mean(object_ee_distance).item())
     # print("size: ", object_ee_distance.size())
     # print("****** object_ee_distance: ", torch.mean(object_ee_distance).item())
     # if  torch.mean(object_ee_distance).item() > 10 or math.isnan(torch.mean(object_ee_distance).item()):

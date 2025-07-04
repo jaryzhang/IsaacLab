@@ -858,12 +858,12 @@ def reset_root_state_uniform(
     root_states = other_asset.data.default_root_state[env_ids].clone()
     if env.scene.object_id == 1:
         root_states[:, 1] = 0
-    # print("root_states", root_states)
+    # print("root_states", root_states.shape)
     # poses
     range_list = [pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
-    ranges = torch.tensor(range_list, device=other_asset.device)
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=other_asset.device)
-
+    ranges = torch.tensor(range_list, device=cur_asset.device)
+    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=cur_asset.device)
+    # print("env.scene.env_origins[env_ids] :",env.scene.env_origins[env_ids].shape)
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids] + rand_samples[:, 0:3]
     orientations_delta = math_utils.quat_from_euler_xyz(rand_samples[:, 3], rand_samples[:, 4], rand_samples[:, 5])
     orientations = math_utils.quat_mul(root_states[:, 3:7], orientations_delta)
@@ -873,17 +873,19 @@ def reset_root_state_uniform(
     # print("orientations shape", orientations.shape)
     # velocities
     range_list = [velocity_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
-    ranges = torch.tensor(range_list, device=other_asset.device)
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=other_asset.device)
+    ranges = torch.tensor(range_list, device=cur_asset.device)
+    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=cur_asset.device)
 
     velocities = root_states[:, 7:13] + rand_samples
     # print("velocities", velocities)
     # print("velocities shape", velocities.shape)
     # set into the physics simulation
+    cur_positins = torch.tensor([-0.28, -0.3, 0.0],device=other_asset.device).repeat(len(env_ids),1)
+    cur_positins += env.scene.env_origins[env_ids]  # add the environment origin to the position
     other_asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
     other_asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
     cur_asset.write_root_pose_to_sim(
-        torch.cat([torch.tensor([-0.28, -0.2, 0.0],device=cur_asset.device).repeat(len(env_ids),1), torch.tensor([1,0,0,0],device=cur_asset.device).repeat(len(env_ids),1)], dim=-1), env_ids=env_ids
+        torch.cat([cur_positins, torch.tensor([1,0,0,0],device=other_asset.device).repeat(len(env_ids),1)], dim=-1), env_ids=env_ids
     )  # also set the pose of the current asset to the same position and orientation
     cur_asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
 

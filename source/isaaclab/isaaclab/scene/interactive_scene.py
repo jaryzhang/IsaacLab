@@ -641,9 +641,9 @@ class InteractiveScene:
             if asset_name in InteractiveSceneCfg.__dataclass_fields__ or asset_cfg is None:
                 print(f"Skipping asset '{asset_name}' as it is a keyword or None.")
                 continue
-            if asset_name == "object_id":
-                self.object_id = asset_cfg
-                continue
+            # if asset_name == "object_id":
+            #     self.object_id = asset_cfg
+            #     continue
             # resolve regex
             if hasattr(asset_cfg, "prim_path"):
                 asset_cfg.prim_path = asset_cfg.prim_path.format(ENV_REGEX_NS=self.env_regex_ns)

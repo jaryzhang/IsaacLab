@@ -148,8 +148,9 @@ def main():
 
             #改动
             image = obs["image"].permute(0, 3, 1, 2).contiguous()  # convert to (B, C, H, W)
-            joint_pos = obs["joint_pos"]
-            actions = policy(image,joint_pos)
+            # joint_pos = obs["joint_pos"]
+            # actions = policy(image,joint_pos)
+            actions = policy(image)
             # env stepping
             obs, _, _, _ = env.step(actions)
         if args_cli.video:

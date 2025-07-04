@@ -43,7 +43,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # target object: will be populated by agent env cfg
     object1: RigidObjectCfg | DeformableObjectCfg = MISSING
     object2: RigidObjectCfg | DeformableObjectCfg = MISSING
-    object_id :int=0
+    # object_id :int=0
 
     # Table
     table = AssetBaseCfg(
@@ -209,7 +209,7 @@ class ResNet18ObservationCfg():
     @configclass
     class ResNet18FeaturesCameraPolicyCfg(ObsGroup):
         """Observations for policy group with features extracted from RGB images with a frozen ResNet18."""
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
         # joint_vel = ObsTerm(func=mdp.joint_vel_rel)
         # object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
         # target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
@@ -219,7 +219,7 @@ class ResNet18ObservationCfg():
             params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"},
         )
 
-        joint_pos = ObsTerm(func=mdp.joint_pos_rel)
+        # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
 
         def __post_init__(self):
             self.enable_corruption = False
@@ -352,7 +352,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=128, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=256, env_spacing=2.5)
     # Basic settings
     # observations: ObservationsCfg = ObservationsCfg()
     #observations: TheiaTinyObservationCfg = TheiaTinyObservationCfg()

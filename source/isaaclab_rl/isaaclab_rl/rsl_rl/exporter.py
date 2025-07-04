@@ -89,16 +89,16 @@ class _TorchPolicyExporter(torch.nn.Module):
         x = x.squeeze(0)
         return self.actor(x)
 
-    # def forward(self, x):
-    #     return self.actor(self.normalizer(x))
+    def forward(self, x):
+        return self.actor(self.normalizer(x))
     
-    def forward(self, image: torch.Tensor, joint_pos: torch.Tensor):
-        image_features = self.cnn_feature(image)
-        state_features = self.state_encoder(joint_pos)
-        # print("image_features : ",image_features.shape)
-        # print("state_features : ",state_features.shape)
-        observations = torch.cat((image_features, state_features), dim=1)
-        return self.actor(observations)
+    # def forward(self, image: torch.Tensor, joint_pos: torch.Tensor):
+    #     image_features = self.cnn_feature(image)
+    #     state_features = self.state_encoder(joint_pos)
+    #     # print("image_features : ",image_features.shape)
+    #     # print("state_features : ",state_features.shape)
+    #     observations = torch.cat((image_features, state_features), dim=1)
+    #     return self.actor(observations)
 
     @torch.jit.export
     def reset(self):
@@ -155,18 +155,18 @@ class _OnnxPolicyExporter(torch.nn.Module):
         x = x.squeeze(0)
         return self.actor(x), h, c
 
-    # def forward(self, x):
-    #     return self.actor(self.normalizer(x))
+    def forward(self, x):
+        return self.actor(self.normalizer(x))
     
-    def forward(self, image: torch.Tensor, joint_pos: torch.Tensor):
-        image_features = self.cnn_feature(image)
-        state_features = self.state_encoder(joint_pos)
-        print("image_features : ",image_features.shape)
-        print("state_features : ",state_features.shape)
-        if state_features.dim() == 1:
-            state_features = state_features.unsqueeze(0)
-        observations = torch.cat((image_features, state_features), dim=1)
-        return self.actor(observations)
+    # def forward(self, image: torch.Tensor, joint_pos: torch.Tensor):
+    #     image_features = self.cnn_feature(image)
+    #     state_features = self.state_encoder(joint_pos)
+    #     print("image_features : ",image_features.shape)
+    #     print("state_features : ",state_features.shape)
+    #     if state_features.dim() == 1:
+    #         state_features = state_features.unsqueeze(0)
+    #     observations = torch.cat((image_features, state_features), dim=1)
+    #     return self.actor(observations)
 
     def export(self, path, filename):
         self.to("cpu")
@@ -201,24 +201,10 @@ class _OnnxPolicyExporter(torch.nn.Module):
             # )
         
         #改动
-        #     dummy_input = torch.zeros(1, 3, 128, 128)
-        # torch.onnx.export(
-        #     self,
-        #     dummy_input,
-        #     os.path.join(path, filename),
-        #     export_params=True,
-        #     opset_version=11,
-        #     verbose=self.verbose,
-        #     input_names=["obs"],
-        #     output_names=["actions"],
-        #     dynamic_axes={},
-        # )
-
-        #改动
-            obs = {"image":torch.zeros(1, 3, 128, 128),"joint_pos":torch.zeros(6,)}
+            dummy_input = torch.zeros(1, 3, 128, 128)
         torch.onnx.export(
             self,
-            obs,
+            dummy_input,
             os.path.join(path, filename),
             export_params=True,
             opset_version=11,
@@ -227,5 +213,19 @@ class _OnnxPolicyExporter(torch.nn.Module):
             output_names=["actions"],
             dynamic_axes={},
         )
+
+        #改动
+        #     obs = {"image":torch.zeros(1, 3, 128, 128),"joint_pos":torch.zeros(6,)}
+        # torch.onnx.export(
+        #     self,
+        #     obs,
+        #     os.path.join(path, filename),
+        #     export_params=True,
+        #     opset_version=11,
+        #     verbose=self.verbose,
+        #     input_names=["obs"],
+        #     output_names=["actions"],
+        #     dynamic_axes={},
+        # )
 
 
