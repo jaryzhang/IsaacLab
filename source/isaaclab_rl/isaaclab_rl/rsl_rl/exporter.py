@@ -63,7 +63,7 @@ class _TorchPolicyExporter(torch.nn.Module):
         if hasattr(policy, "cnn_feature"):
             print("Policy has CNN feature extractor.")
             self.cnn_feature = copy.deepcopy(policy.cnn_feature)
-            self.state_encoder = copy.deepcopy(policy.state_encoder)
+            # self.state_encoder = copy.deepcopy(policy.state_encoder)
             if self.is_recurrent:
                 self.rnn = copy.deepcopy(policy.memory_s.rnn)
         else:
@@ -92,13 +92,13 @@ class _TorchPolicyExporter(torch.nn.Module):
     def forward(self, x):
         return self.actor(self.normalizer(x))
     
-    # def forward(self, image: torch.Tensor, joint_pos: torch.Tensor):
-    #     image_features = self.cnn_feature(image)
-    #     state_features = self.state_encoder(joint_pos)
-    #     # print("image_features : ",image_features.shape)
-    #     # print("state_features : ",state_features.shape)
-    #     observations = torch.cat((image_features, state_features), dim=1)
-    #     return self.actor(observations)
+    def forward(self, x):
+        image_features = self.cnn_feature(x)
+        # state_features = self.state_encoder(joint_pos)
+        # print("image_features : ",image_features.shape)
+        # print("state_features : ",state_features.shape)
+        
+        return self.actor(image_features)
 
     @torch.jit.export
     def reset(self):
@@ -123,6 +123,7 @@ class _OnnxPolicyExporter(torch.nn.Module):
         super().__init__()
         self.verbose = verbose
         self.is_recurrent = policy.is_recurrent
+        print("policy:", policy)
         # copy policy parameters
         if hasattr(policy, "actor"):
             self.actor = copy.deepcopy(policy.actor)
@@ -134,7 +135,7 @@ class _OnnxPolicyExporter(torch.nn.Module):
                 self.rnn = copy.deepcopy(policy.memory_s.rnn)
         if hasattr(policy, "cnn_feature"):
             self.cnn_feature = copy.deepcopy(policy.cnn_feature)
-            self.state_encoder = copy.deepcopy(policy.state_encoder)
+            # self.state_encoder = copy.deepcopy(policy.state_encoder)
             if self.is_recurrent:
                 self.rnn = copy.deepcopy(policy.memory_s.rnn)
         else:
@@ -155,18 +156,18 @@ class _OnnxPolicyExporter(torch.nn.Module):
         x = x.squeeze(0)
         return self.actor(x), h, c
 
-    def forward(self, x):
-        return self.actor(self.normalizer(x))
+    # def forward(self, x):
+    #     return self.actor(self.normalizer(x))
     
-    # def forward(self, image: torch.Tensor, joint_pos: torch.Tensor):
-    #     image_features = self.cnn_feature(image)
-    #     state_features = self.state_encoder(joint_pos)
-    #     print("image_features : ",image_features.shape)
-    #     print("state_features : ",state_features.shape)
-    #     if state_features.dim() == 1:
-    #         state_features = state_features.unsqueeze(0)
-    #     observations = torch.cat((image_features, state_features), dim=1)
-    #     return self.actor(observations)
+    def forward(self, x):
+        image_features = self.cnn_feature(x)
+        # state_features = self.state_encoder(joint_pos)
+        # print("image_features : ",image_features.shape)
+        # print("state_features : ",state_features.shape)
+        # if state_features.dim() == 1:
+        #     state_features = state_features.unsqueeze(0)
+        # observations = torch.cat((image_features, state_features), dim=1)
+        return self.actor(image_features)
 
     def export(self, path, filename):
         self.to("cpu")

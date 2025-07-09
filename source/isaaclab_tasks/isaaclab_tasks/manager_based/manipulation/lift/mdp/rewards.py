@@ -39,6 +39,7 @@ def object_ee_distance(
     ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
     # Target object position: (num_envs, 3)
     cube_pos_w = object.data.root_pos_w
+    # print("env.object_id :", env.scene.object_id)
     # End-effector position: (num_envs, 3)
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
     # Distance of the end-effector to the object: (num_envs,)
@@ -77,6 +78,7 @@ def object_ee_distance(
 
     # return 1 - torch.tanh(object_ee_distance / std)
     return 1 - torch.tanh(object_ee_distance/std)
+    # return torch.exp(-0.5 * (object_ee_distance / std) ** 2)
     
     #ratio = object_ee_distance / (std + 1e-6)  # 避免除零
     #return torch.exp(-torch.clamp(ratio, min=0, max=50))  # 防止exp(-inf)

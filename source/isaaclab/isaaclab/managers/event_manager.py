@@ -228,6 +228,10 @@ class EventManager(ManagerBase):
                         # call the event term
                         term_cfg.func(self._env, valid_env_ids, **term_cfg.params)
             elif mode == "reset":
+                # print("EventManager: Applying reset term:", term_cfg.name)
+                # print("env_ids33 :", env_ids)
+                # env_ids = torch.arange(4, device='cuda:0')
+                # print("env_ids44 :", env_ids)
                 # obtain the minimum step count between resets
                 min_step_count = term_cfg.min_step_count_between_reset
                 # resolve the environment indices

@@ -836,7 +836,7 @@ def reset_root_state_uniform(
     This function randomizes the root position and velocity of the asset.
 
     * It samples the root position from the given ranges and adds them to the default root position, before setting
-      them into the physics simulation.
+       them into the physics simulation.
     * It samples the root orientation from the given ranges and sets them into the physics simulation.
     * It samples the root velocity from the given ranges and sets them into the physics simulation.
 
@@ -846,17 +846,28 @@ def reset_root_state_uniform(
     """
     # extract the used quantities (to enable type-hinting)
     cur_asset = env.scene[asset_cfg[env.scene.object_id].name]
+    # print("env_ids11 :",env_ids)
+    # env_ids = torch.arange(256, device='cuda:0')  # 包含 0 到 255 的 tensor
+    # print("env_ids22 :",env_ids)
+    # print("asset_cfg[env.scene.object_id].name :",asset_cfg[env.scene.object_id].name)
+
     if env.scene.object_id == 0:
         # if the first asset is being reset, the second asset is the other one
         other_asset = env.scene[asset_cfg[1].name]
+        print("other_asset 1")
+        # print("env.scene.object_id :",asset_cfg[1].name)
         env.scene.object_id = 1  # switch to the second asset for the next reset
     else:
         # if the second asset is being reset, the first asset is the other one  
         other_asset = env.scene[asset_cfg[0].name]
+        print("other_asset 0")
+        # print("env.scene.object_id :",asset_cfg[0].name)
         env.scene.object_id = 0  # switch to the first asset for the next reset
+    # print("env.scene.object_id :",env.scene.object_id)
+    # print("other_asset :",other_asset.name)
     # get default root state
-    root_states = other_asset.data.default_root_state[env_ids].clone()
-    if env.scene.object_id == 1:
+    root_states = cur_asset.data.default_root_state[env_ids].clone()
+    if env.scene.object_id == 0:
         root_states[:, 1] = 0
     # print("root_states", root_states.shape)
     # poses
@@ -1120,13 +1131,13 @@ def reset_nodal_state_uniform(
 def reset_scene_to_default(env: ManagerBasedEnv, env_ids: torch.Tensor):
     """Reset the scene to the default state specified in the scene configuration."""
     # rigid bodies
-    for rigid_object in env.scene.rigid_objects.values():
-        # obtain default and deal with the offset for env origins
-        default_root_state = rigid_object.data.default_root_state[env_ids].clone()
-        default_root_state[:, 0:3] += env.scene.env_origins[env_ids]
-        # set into the physics simulation
-        rigid_object.write_root_pose_to_sim(default_root_state[:, :7], env_ids=env_ids)
-        rigid_object.write_root_velocity_to_sim(default_root_state[:, 7:], env_ids=env_ids)
+    # for rigid_object in env.scene.rigid_objects.values():
+    #     # obtain default and deal with the offset for env origins
+    #     default_root_state = rigid_object.data.default_root_state[env_ids].clone()
+    #     default_root_state[:, 0:3] += env.scene.env_origins[env_ids]
+    #     # set into the physics simulation
+    #     rigid_object.write_root_pose_to_sim(default_root_state[:, :7], env_ids=env_ids)
+    #     rigid_object.write_root_velocity_to_sim(default_root_state[:, 7:], env_ids=env_ids)
     # articulations
     for articulation_asset in env.scene.articulations.values():
         # obtain default and deal with the offset for env origins

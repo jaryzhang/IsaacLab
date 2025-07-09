@@ -335,7 +335,7 @@ def image(
             pass
         elif "distance_to" in data_type or "depth" in data_type:
             images[images == float("inf")] = 0
-
+    # print("images shape: ", images.shape)
     return images.clone()
 
 

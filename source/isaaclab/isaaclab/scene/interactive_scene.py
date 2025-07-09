@@ -128,7 +128,7 @@ class InteractiveScene:
         self.env_prim_paths = self.cloner.generate_paths(f"{self.env_ns}/env", self.cfg.num_envs)
         # create source prim
         self.stage.DefinePrim(self.env_prim_paths[0], "Xform")
-
+        print("self.cfg.replicate_physics :", self.cfg.replicate_physics)
         # when replicate_physics=False, we assume heterogeneous environments and clone the xforms first.
         # this triggers per-object level cloning in the spawner.
         if not self.cfg.replicate_physics:
@@ -382,6 +382,7 @@ class InteractiveScene:
         for deformable_object in self._deformable_objects.values():
             deformable_object.reset(env_ids)
         for rigid_object in self._rigid_objects.values():
+            # print("reset assets rigid_object")
             rigid_object.reset(env_ids)
         for rigid_object_collection in self._rigid_object_collections.values():
             rigid_object_collection.reset(env_ids)
@@ -641,9 +642,9 @@ class InteractiveScene:
             if asset_name in InteractiveSceneCfg.__dataclass_fields__ or asset_cfg is None:
                 print(f"Skipping asset '{asset_name}' as it is a keyword or None.")
                 continue
-            # if asset_name == "object_id":
-            #     self.object_id = asset_cfg
-            #     continue
+            if asset_name == "object_id":
+                self.object_id = asset_cfg
+                continue
             # resolve regex
             if hasattr(asset_cfg, "prim_path"):
                 asset_cfg.prim_path = asset_cfg.prim_path.format(ENV_REGEX_NS=self.env_regex_ns)

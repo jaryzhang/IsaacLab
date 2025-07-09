@@ -47,8 +47,8 @@ MY_ROBOT_CFG = ArticulationCfg(
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
             "joint1": 0.0,         # 底座旋转
-            "joint2": 0.8,         # 机械臂1
-            "joint3": 0.4,         # 机械臂2
+            "joint2": 0.4,         # 机械臂1
+            "joint3": 0.0,         # 机械臂2
             "joint3_and_up": 0.0,  # 旋转
             "finger_joint1": 0.0,
             "finger_joint2": 0.0,
@@ -198,6 +198,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
                 ),
             ],
         )
+        # self.object_id = 0  # default object id
 
 
 @configclass

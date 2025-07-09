@@ -76,11 +76,11 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         #     focal_length=48.9, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         # ),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
-        offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.05), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.06), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
-            focal_length=35.4, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+            focal_length=24.7, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         ),
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
@@ -263,8 +263,8 @@ class EventCfg:
             # "pose_range": {"x": (-0.05, 0.05), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
 
             "pose_range": {
-                "x": (-0.05, 0.05),
-                "y": (-0.05, 0.05),
+                "x": (-0.06, 0.06),
+                "y": (-0.08, 0.08),
                 "z": (0.0, 0.0),
             },
             "velocity_range": {},
@@ -284,20 +284,20 @@ class RewardsCfg:
     reaching_object = RewTerm(
         func=mdp.object_ee_distance,
         params={"std": 0.1},
-        weight=20,  # 2.0
+        weight=2,  # 2.0
         # weight=20.0,
     )
 
     lifting_object = RewTerm(
         func=mdp.object_is_lifted,
         params={"minimal_height": 0.04},
-        weight=500.0,   # 1500  150
+        weight=50000.0,   # 1500  150
     )
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
         params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=1.6, # 16.0
+        weight=50000, # 16.0
     )
 
     object_goal_tracking_fine_grained = RewTerm(
@@ -364,11 +364,12 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     terminations: TerminationsCfg = TerminationsCfg()
     events: EventCfg = EventCfg()
     curriculum: CurriculumCfg = CurriculumCfg()
+    # object_id  : int = 0  # default object id, will be set by agent env cfg
 
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 20   # 2 20 48
+        self.decimation = 10   # 2 20 48
         self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
