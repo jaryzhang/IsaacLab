@@ -48,7 +48,7 @@ MY_ROBOT_CFG = ArticulationCfg(
         joint_pos={
             "joint1": 0.0,         # 底座旋转
             "joint2": 0.8,         # 机械臂1
-            "joint3": 0.4,         # 机械臂2
+            "joint3": 0.0,         # 机械臂2
             "joint3_and_up": 0.0,  # 旋转
             "finger_joint1": 0.0,
             "finger_joint2": 0.0,
@@ -111,13 +111,33 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         self.commands.object_pose.body_name = "gripper_finger_link2"
 
         # Set Cube as object
-        self.scene.object = RigidObjectCfg(
-            prim_path="{ENV_REGEX_NS}/Object",
+        self.scene.object1 = RigidObjectCfg(
+            prim_path="{ENV_REGEX_NS}/Object1",
             #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0, 0], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0.0, 0], rot=[1, 0, 0, 0]),
             spawn=UsdFileCfg(
                 # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
                 usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",
+                scale=(0.14, 0.14, 0.14),
+
+                rigid_props=RigidBodyPropertiesCfg(
+                    solver_position_iteration_count=16,
+                    solver_velocity_iteration_count=16,
+                    max_angular_velocity=1000.0,
+                    max_linear_velocity=1000.0,
+                    max_depenetration_velocity=5.0,
+                    disable_gravity=False,
+                ),
+            ),debug_vis=False
+        )
+
+        self.scene.object2 = RigidObjectCfg(
+            prim_path="{ENV_REGEX_NS}/Object2",
+            #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, -0.1, 0], rot=[1, 0, 0, 0]),
+            spawn=UsdFileCfg(
+                # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+                usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/green_block.usd",
                 scale=(0.14, 0.14, 0.14),
 
                 rigid_props=RigidBodyPropertiesCfg(

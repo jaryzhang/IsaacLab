@@ -149,6 +149,8 @@ def main():
             #改动
             obs = obs.permute(0, 3, 1, 2)
             actions = policy(obs)
+            print("actions:", actions)
+            actions[:, -1] = 0.01
             # env stepping
             obs, _, _, _ = env.step(actions)
         if args_cli.video:

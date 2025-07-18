@@ -20,22 +20,22 @@ if TYPE_CHECKING:
 
 
 def object_is_lifted(
-    env: ManagerBasedRLEnv, minimal_height: float, object_cfg: SceneEntityCfg = SceneEntityCfg("object")
+    env: ManagerBasedRLEnv, minimal_height: float, object_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")]
 ) -> torch.Tensor:
     """Reward the agent for lifting the object above the minimal height."""
-    object: RigidObject = env.scene[object_cfg.name]
+    object: RigidObject = env.scene[object_cfg[env.scene.object_id].name]
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0)
 
 
 def object_ee_distance(
     env: ManagerBasedRLEnv,
     std: float,
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+    object_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")],
     ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame"),
 ) -> torch.Tensor:
     """Reward the agent for reaching the object using tanh-kernel."""
     # extract the used quantities (to enable type-hinting)
-    object: RigidObject = env.scene[object_cfg.name]
+    object: RigidObject = env.scene[object_cfg[env.scene.object_id].name]
     ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
     # Target object position: (num_envs, 3)
     cube_pos_w = object.data.root_pos_w
@@ -43,7 +43,24 @@ def object_ee_distance(
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
     # Distance of the end-effector to the object: (num_envs,)
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-    
+    object1 = env.scene[object_cfg[0].name]
+    object2 = env.scene[object_cfg[1].name]
+    # print("ee_w: ", ee_w[0])
+    # print("object1 pos: ", object1.data.root_pos_w[0])
+    # print("object2 pos: ", object2.data.root_pos_w[0])
+    # print("object_ee_distance: ", object_ee_distance[0])
+    # print("object_ee_distance: ", object_ee_distance)
+    dis1 = torch.norm(object1.data.root_pos_w - ee_w, dim=1)
+    dis2 = torch.norm(object2.data.root_pos_w - ee_w, dim=1)
+
+    # print("name1: ", object_cfg[0].name)
+    # print("name2: ", object_cfg[1].name)
+    # print("name cur: ", object_cfg[env.scene.object_id].name)
+    # print("cur pos1 :",env.scene[object_cfg[0].name].data.root_pos_w[0])
+    # print("cur pos2 :",env.scene[object_cfg[1].name].data.root_pos_w[0])
+    # print("cur dis 1: ", torch.mean(dis1).item())
+    # print("cur dis 2: ", torch.mean(dis2).item())
+    # print("cur dis  : ", torch.mean(object_ee_distance).item())
     # print("size: ", object_ee_distance.size())
     # print("****** object_ee_distance: ", torch.mean(object_ee_distance).item())
     # if  torch.mean(object_ee_distance).item() > 10 or math.isnan(torch.mean(object_ee_distance).item()):
@@ -51,15 +68,19 @@ def object_ee_distance(
     #     # print("****** WARNING ******")
     #     return torch.full((4096,), 1e-10).to('cuda')
     
-    # with open('output_formres1.txt', 'a') as f:
-    #    f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()},"
-    #            f"reward: {torch.mean(1 / (object_ee_distance * 10 / std + 1e-6)).item()}, std: {std}\n")
+    with open('output_formres1.txt', 'a') as f:
+       f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()},"
+               f"reward: {torch.mean(1 - torch.tanh(object_ee_distance / std)).item()}, std: {std}\n")
 
     #with open('output_formres1.txt', 'a') as f:
     #    f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()}\n")
+    # nan_mask = torch.isnan(object_ee_distance)
 
-    # return 1 - torch.tanh(object_ee_distance / std)
-    return 1 - torch.tanh(object_ee_distance)
+    # # 打印 nan 的索引
+    # nan_indices = torch.nonzero(nan_mask, as_tuple=True)
+    # print(nan_indices)
+    return 1 - torch.tanh(object_ee_distance / std)
+    #return 1 - torch.tanh(object_ee_distance)
     
     #ratio = object_ee_distance / (std + 1e-6)  # 避免除零
     #return torch.exp(-torch.clamp(ratio, min=0, max=50))  # 防止exp(-inf)
@@ -73,12 +94,12 @@ def object_goal_distance(
     minimal_height: float,
     command_name: str,
     robot_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+    object_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")],
 ) -> torch.Tensor:
     """Reward the agent for tracking the goal pose using tanh-kernel."""
     # extract the used quantities (to enable type-hinting)
     robot: RigidObject = env.scene[robot_cfg.name]
-    object: RigidObject = env.scene[object_cfg.name]
+    object: RigidObject = env.scene[object_cfg[env.scene.object_id].name]
     command = env.command_manager.get_command(command_name)
     # compute the desired position in the world frame
     des_pos_b = command[:, :3]
@@ -96,3 +117,35 @@ def print_debug_info(env:ManagerBasedRLEnv):
         print(f"EE position: {env.scene.ee_frame.data.target_pos_w[0].cpu().numpy()}")
         print(f"Rewards: {env.reward_buf[0].item():.2f}")
     return 0  # 必须返回一个值，但不影响奖励
+
+
+def grip_object(
+    env: ManagerBasedRLEnv, object_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")] , ee_frame_cfg: SceneEntityCfg = SceneEntityCfg("ee_frame")
+)-> torch.Tensor:
+    """Reward the agent for closing the gripper when object is within finger"""
+    
+    ee_frame: FrameTransformer = env.scene[ee_frame_cfg.name]
+    object = env.scene[object_cfg[env.scene.object_id].name]
+    # Target object position: (num_envs, 3)
+    cube_pos_w = object.data.root_pos_w
+    # End-effector position: (num_envs, 3)
+    ee_w = ee_frame.data.target_pos_w[..., 0, :]
+    # Distance of the end-effector to the object: (num_envs,)
+    object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
+    close_gripper = (env.scene['robot'].data.joint_pos_target[:, 5] >= 0) & (env.scene['robot'].data.joint_pos_target[:, 5] <= 0.02)
+    if object_ee_distance.mean().item() <=0.01:
+        reward = torch.where(
+        object_ee_distance < 0.01,
+        torch.where(close_gripper, torch.tensor(1.0, device=object_ee_distance.device), torch.tensor(-0.1, device=object_ee_distance.device)),
+        torch.tensor(0.0, device=object_ee_distance.device)
+    )
+    else:
+        open_gripper = (env.scene['robot'].data.joint_pos_target[:, 5] > 0.02)
+        reward = torch.where(object_ee_distance >0.01,
+            torch.where(open_gripper, torch.tensor(1.0, device=object_ee_distance.device), torch.tensor(-0.1, device=object_ee_distance.device)),
+            torch.tensor(0.0, device=object_ee_distance.device)
+        )
+    # print("joint_pos_target : ", env.scene['robot'].data.joint_pos_target[:,5].mean().item())
+    #add this line on top of existing object_ee_distance
+    # reward = torch.where((object_ee_distance < 0.01) & (env.scene['robot'].data.joint_pos_target[:,5] == 0), 1, 0)
+    return reward
