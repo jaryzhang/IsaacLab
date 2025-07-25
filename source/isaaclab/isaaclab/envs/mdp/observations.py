@@ -247,6 +247,7 @@ def imu_lin_acc(env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg
 
 def image(
     env: ManagerBasedEnv,
+    # cnt: int = 0,
     sensor_cfg: SceneEntityCfg = SceneEntityCfg("tiled_camera"),
     data_type: str = "rgb",
     convert_perspective_to_orthogonal: bool = False,
@@ -277,12 +278,14 @@ def image(
 
     # obtain the input image
     images = sensor.data.output[data_type]
-    # rgb_image_tensor = torch.tensor(images).float()
-    # print("shape :",rgb_image_tensor.shape)
+
+    # rendered_images = env.scene.sensors[SceneEntityCfg("tiled_camera2").name].data.output[data_type]
+    # rgb_image_tensor = torch.tensor(rendered_images).float()
+    # print("shape :",rendered_images.shape)
     # depth image conversion
     if (data_type == "distance_to_camera") and convert_perspective_to_orthogonal:
         images = math_utils.orthogonalize_perspective_depth(images, sensor.data.intrinsic_matrices)
-    # obs_np = images.squeeze(0).cpu().numpy() 
+    # obs_np = rgb_image_tensor.squeeze(0).cpu().numpy() 
     # # act_np = actions.cpu().numpy() 
     # # os.makedirs(act_log_dir, exist_ok=True)
     # # np.save(os.path.join(act_log_dir, f"act_step_{t}.npy"), act_np)
@@ -291,8 +294,9 @@ def image(
 
     # # RGB 转 BGR 再保存
     # obs_bgr = cv2.cvtColor(obs_np, cv2.COLOR_RGB2BGR)
-    # os.makedirs("IMAGES5", exist_ok=True)
-    # cv2.imwrite(f"./IMAGES5/observation_{time.time()}.png", obs_bgr)
+    # os.makedirs("IMAGES1", exist_ok=True)
+    # cv2.imwrite(f"./IMAGES1/observation_{cnt}.png", obs_bgr)
+    # print(f"./IMAGES1/observation_{cnt}.png")
     # rgb/depth image normalization
     if normalize:
         # print(f"Normalizing images of type: {data_type}")

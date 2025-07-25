@@ -85,7 +85,9 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         self.episode_length_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         # -- set the framerate of the gym video recorder wrapper so that the playback speed of the produced video matches the simulation
         self.metadata["render_fps"] = 1 / self.step_dt
-
+        self.last_dis = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
+        self.last_grip = torch.zeros(self.num_envs, device=self.device, dtype=torch.float32)
+        # self.counter = 0
         print("[INFO]: Completed setting up the environment...")
 
     """
@@ -101,6 +103,16 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
     def max_episode_length(self) -> int:
         """Maximum episode length in environment steps."""
         return math.ceil(self.max_episode_length_s / self.step_dt)
+    
+    @property
+    def last_distance(self) -> torch.Tensor:
+        """Last distance of the end-effector to the object."""
+        return self.last_dis
+    
+    @property
+    def last_gripper(self) -> torch.Tensor:
+        """Last gripper state."""
+        return self.last_grip
 
     """
     Operations - Setup.
@@ -171,7 +183,7 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         """
         # process actions
         self.action_manager.process_action(action.to(self.device))
-
+        # print("actions11 : ",action)
         self.recorder_manager.record_pre_step()
 
         # check if we need to do rendering within the physics loop
@@ -205,7 +217,7 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         self.reset_time_outs = self.termination_manager.time_outs
         # -- reward computation
         self.reward_buf = self.reward_manager.compute(dt=self.step_dt)
-
+        # print("[INFO] Rewards: ", self.reward_buf)
         if len(self.recorder_manager.active_terms) > 0:
             # update observations for recording if needed
             self.obs_buf = self.observation_manager.compute()
@@ -216,11 +228,11 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
         reset_env_ids = torch.arange(self.num_envs, device=self.reset_buf.device) \
         if self.reset_buf.any() else torch.tensor([], dtype=torch.long, device=self.reset_buf.device)
-
         if len(reset_env_ids) > 0:
             # trigger recorder terms for pre-reset calls
             self.recorder_manager.record_pre_reset(reset_env_ids)
-
+            self.last_dis = torch.zeros_like(self.last_dis)
+            self.last_grip = torch.zeros_like(self.last_grip)
             self._reset_idx(reset_env_ids)
             # update articulation kinematics
             self.scene.write_data_to_sim()
@@ -235,13 +247,16 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
 
         # -- update command
         self.command_manager.compute(dt=self.step_dt)
+        # print("Command Manager: ", self.command_manager)
         # -- step interval events
         if "interval" in self.event_manager.available_modes:
             self.event_manager.apply(mode="interval", dt=self.step_dt)
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
+        
         self.obs_buf = self.observation_manager.compute()
-
+        # print("obs shape:", self.obs_buf["policy"].shape)
+        # self.counter += 1
         # return observations, rewards, resets and extras
         return self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras
 

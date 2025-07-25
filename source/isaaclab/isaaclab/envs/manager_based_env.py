@@ -124,7 +124,7 @@ class ManagerBasedEnv:
 
         # allocate dictionary to store metrics
         self.extras = {}
-
+        # self.counter = 0
         # generate scene
         with Timer("[INFO]: Time taken for scene creation", "scene_creation"):
             self.scene = InteractiveScene(self.cfg.scene)

@@ -90,6 +90,18 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         height=128,
     )
 
+    # tiled_camera2: TiledCameraCfg = TiledCameraCfg(
+    #     prim_path="{ENV_REGEX_NS}/Camera_2",
+    #     offset=TiledCameraCfg.OffsetCfg(pos=(1.3, 0.0, 0.9), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+    #     data_types=["rgb"],
+    #     spawn=sim_utils.PinholeCameraCfg(
+    #         focal_length=38.3, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+    #     ),
+    #     width=1000,
+    #     height=800,
+    # )
+
+
 
 ##
 # MDP settings
@@ -221,6 +233,11 @@ class ResNet18ObservationCfg:
             params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"},
         )
 
+        # image = ObsTerm(
+        #     func=mdp.image_features,
+        #     params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb","model_name": "resnet18"}
+        # )
+
         # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
 
         # def __post_init__(self):
@@ -282,20 +299,20 @@ class RewardsCfg:
     reaching_object = RewTerm(
         func=mdp.object_ee_distance,
         params={"std": 0.1},
-        weight=2,  # 2.0
+        weight=8,  # 2.0
         # weight=20.0,
     )
 
     lifting_object = RewTerm(
         func=mdp.object_is_lifted,
-        params={"minimal_height": 0.01},
+        params={"minimal_height": 0.02},
         weight=50000.0,   # 1500  150
     )
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.04, "command_name": "object_pose"},
-        weight=10, # 16.0
+        params={"std": 0.3, "minimal_height": 0.02, "command_name": "object_pose"},
+        weight=50000, # 16.0
     )
 
     object_goal_tracking_fine_grained = RewTerm(
@@ -314,10 +331,10 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    # grip_object = RewTerm(
-    #     func=mdp.grip_object,
-    #     weight=1.6,  # 10.0
-    # )
+    grip_object = RewTerm(
+        func=mdp.grip_object,
+        weight=2,  # 10.0
+    )
 
 
 @configclass

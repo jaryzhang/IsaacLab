@@ -79,6 +79,9 @@ def object_ee_distance(
     # # 打印 nan 的索引
     # nan_indices = torch.nonzero(nan_mask, as_tuple=True)
     # print(nan_indices)
+    # print("cube_pos_w: ", cube_pos_w)
+    # print("ee_w: ", ee_w)
+    # print("object_ee_distance: ", object_ee_distance)
     return 1 - torch.tanh(object_ee_distance / std)
     #return 1 - torch.tanh(object_ee_distance)
     
@@ -132,20 +135,34 @@ def grip_object(
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
     # Distance of the end-effector to the object: (num_envs,)
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
-    close_gripper = (env.scene['robot'].data.joint_pos_target[:, 5] >= 0) & (env.scene['robot'].data.joint_pos_target[:, 5] <= 0.02)
-    if object_ee_distance.mean().item() <=0.01:
-        reward = torch.where(
-        object_ee_distance < 0.01,
-        torch.where(close_gripper, torch.tensor(1.0, device=object_ee_distance.device), torch.tensor(-0.1, device=object_ee_distance.device)),
-        torch.tensor(0.0, device=object_ee_distance.device)
-    )
-    else:
-        open_gripper = (env.scene['robot'].data.joint_pos_target[:, 5] > 0.02)
-        reward = torch.where(object_ee_distance >0.01,
-            torch.where(open_gripper, torch.tensor(1.0, device=object_ee_distance.device), torch.tensor(-0.1, device=object_ee_distance.device)),
-            torch.tensor(0.0, device=object_ee_distance.device)
-        )
-    # print("joint_pos_target : ", env.scene['robot'].data.joint_pos_target[:,5].mean().item())
-    #add this line on top of existing object_ee_distance
-    # reward = torch.where((object_ee_distance < 0.01) & (env.scene['robot'].data.joint_pos_target[:,5] == 0), 1, 0)
-    return reward
+    cur_angle = env.scene['robot'].data.joint_pos_target[:, 5]
+    #条件一：当前dis小于0.01
+    cond1 = object_ee_distance < 0.015
+    #条件二：在接近物体
+    cond2 = object_ee_distance < env.last_dis
+    #条件三：夹爪在逐渐闭合
+    # cond3 = cur_angle < env.last_grip
+    #new 条件三：夹爪开放
+    cond3 = cur_angle < env.last_grip
+    #new条件四：夹爪逐渐闭合
+    cond4 = cur_angle > env.last_grip
+    #new条件五：夹爪全部或部分闭合
+    cond5 = cur_angle > 0
+    #new条件六：夹爪开启
+    cond6 = cur_angle <=0
+   
+    reward_mask1 = cond1 & cond2 & (cond4 | cond5)
+    # print("reward_mask1: ", reward_mask1)
+    reward1 = torch.where(reward_mask1, torch.tensor(1.5), torch.tensor(0.0))
+
+    reward_mask2 = (~cond1) & cond2 & (cond3 | cond6)
+    reward2 = torch.where(reward_mask2, torch.tensor(0.3), torch.tensor(0.0))
+    
+    print("cur_angle: ", cur_angle.mean().item())
+
+    #更新last_dis和last_angle
+    env.last_dis = object_ee_distance
+    env.last_grip = cur_angle
+
+
+    return reward1+reward2

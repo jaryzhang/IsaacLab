@@ -146,6 +146,7 @@ class RewardManager(ManagerBase):
                 continue
             # compute term's value
             value = term_cfg.func(self._env, **term_cfg.params) * term_cfg.weight * dt
+            # print(f"reward {name} : {value}")
             # update total reward
             self._reward_buf += value
             # update episodic sum
@@ -154,6 +155,7 @@ class RewardManager(ManagerBase):
             # Update current reward for this step.
             self._step_reward[:, self._term_names.index(name)] = value / dt
             # print("total reward :",self._reward_buf.sum()/self.num_envs)
+            # print("reward_buf :", self._reward_buf)
         return self._reward_buf
 
     """

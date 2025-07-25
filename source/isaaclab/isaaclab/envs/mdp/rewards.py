@@ -254,6 +254,8 @@ def action_rate_l2(env: ManagerBasedRLEnv) -> torch.Tensor:
     # with open('output_652.txt', 'a') as f:
     #     f.write(f"action_rate_l2 : {torch.mean(torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)).item()}\n")
     # print("WARNING: action_rate_l2 :",torch.mean(torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)).item())
+    # print("env.action_manager.action:", env.action_manager.action)
+    # print("env.action_manager.prev_action:", env.action_manager.prev_action)
     return torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)
 
 

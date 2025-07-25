@@ -303,6 +303,7 @@ class ObservationManager(ManagerBase):
         obs_terms = zip(group_term_names, self._group_obs_term_cfgs[group_name])
 
         # evaluate terms: compute, add noise, clip, scale, custom modifiers
+        
         for term_name, term_cfg in obs_terms:
             # compute term's value
             obs: torch.Tensor = term_cfg.func(self._env, **term_cfg.params).clone()
