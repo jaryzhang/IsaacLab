@@ -41,8 +41,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     # end-effector sensor: will be populated by agent env cfg
     ee_frame: FrameTransformerCfg = MISSING
     # target object: will be populated by agent env cfg
-    object1: RigidObjectCfg | DeformableObjectCfg = MISSING
-    object2: RigidObjectCfg | DeformableObjectCfg = MISSING
+    object: RigidObjectCfg | DeformableObjectCfg = MISSING
     # object_id :int=0
 
     # Table
@@ -343,10 +342,10 @@ class TerminationsCfg:
 
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
 
-    # object_dropping = DoneTerm(
-    #     func=mdp.root_height_below_minimum,
-    #     params={"minimum_height": -0.05},
-    # )
+    object_dropping = DoneTerm(
+        func=mdp.root_height_below_minimum,
+        params={"minimum_height": -0.05},
+    )
 
 
 @configclass

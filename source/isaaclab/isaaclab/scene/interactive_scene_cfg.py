@@ -84,7 +84,7 @@ class InteractiveSceneCfg:
     data is updated every time sensors are updated.
     """
 
-    replicate_physics: bool = True
+    replicate_physics: bool = False
     """Enable/disable replication of physics schemas when using the Cloner APIs. Default is True.
 
     If True, the simulation will have the same asset instances (USD prims) in all the cloned environments.

@@ -11,6 +11,7 @@ from isaaclab.sensors import TiledCameraCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
+from isaaclab.sim.spawners.wrappers import MultiUsdFileCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 
@@ -111,13 +112,13 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         self.commands.object_pose.body_name = "gripper_finger_link2"
 
         # Set Cube as object
-        self.scene.object1 = RigidObjectCfg(
-            prim_path="{ENV_REGEX_NS}/Object1",
+        self.scene.object = RigidObjectCfg(
+            prim_path="{ENV_REGEX_NS}/Object",
             #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
             init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0.0, 0], rot=[1, 0, 0, 0]),
-            spawn=UsdFileCfg(
+            spawn=MultiUsdFileCfg(
                 # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
-                usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",
+                usd_path=[f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/green_block.usd"],
                 scale=(0.14, 0.14, 0.14),
 
                 rigid_props=RigidBodyPropertiesCfg(
@@ -128,28 +129,29 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
                     max_depenetration_velocity=5.0,
                     disable_gravity=False,
                 ),
-            ),debug_vis=False
+                random_choice=True,
+            ),debug_vis=False,
         )
 
-        self.scene.object2 = RigidObjectCfg(
-            prim_path="{ENV_REGEX_NS}/Object2",
-            #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, -0.1, 0], rot=[1, 0, 0, 0]),
-            spawn=UsdFileCfg(
-                # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
-                usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/green_block.usd",
-                scale=(0.14, 0.14, 0.14),
+        # self.scene.object2 = RigidObjectCfg(
+        #     prim_path="{ENV_REGEX_NS}/Object2",
+        #     #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+        #     init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, -0.1, 0], rot=[1, 0, 0, 0]),
+        #     spawn=UsdFileCfg(
+        #         # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+        #         usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/green_block.usd",
+        #         scale=(0.14, 0.14, 0.14),
 
-                rigid_props=RigidBodyPropertiesCfg(
-                    solver_position_iteration_count=16,
-                    solver_velocity_iteration_count=16,
-                    max_angular_velocity=1000.0,
-                    max_linear_velocity=1000.0,
-                    max_depenetration_velocity=5.0,
-                    disable_gravity=False,
-                ),
-            ),debug_vis=False
-        )
+        #         rigid_props=RigidBodyPropertiesCfg(
+        #             solver_position_iteration_count=16,
+        #             solver_velocity_iteration_count=16,
+        #             max_angular_velocity=1000.0,
+        #             max_linear_velocity=1000.0,
+        #             max_depenetration_velocity=5.0,
+        #             disable_gravity=False,
+        #         ),
+        #     ),debug_vis=False
+        # )
 
         '''
         self.scene.table_cam = CameraCfg(

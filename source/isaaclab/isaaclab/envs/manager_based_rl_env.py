@@ -225,14 +225,17 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
 
         # -- reset envs that terminated/timed-out and log the episode information
         #改reset
-        # reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
-        reset_env_ids = torch.arange(self.num_envs, device=self.reset_buf.device) \
-        if self.reset_buf.any() else torch.tensor([], dtype=torch.long, device=self.reset_buf.device)
+        reset_env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+        # reset_env_ids = torch.arange(self.num_envs, device=self.reset_buf.device) \
+        # if self.reset_buf.any() else torch.tensor([], dtype=torch.long, device=self.reset_buf.device)
         if len(reset_env_ids) > 0:
             # trigger recorder terms for pre-reset calls
             self.recorder_manager.record_pre_reset(reset_env_ids)
-            self.last_dis = torch.zeros_like(self.last_dis)
-            self.last_grip = torch.zeros_like(self.last_grip)
+            # self.last_dis = torch.zeros_like(self.last_dis)
+            # self.last_grip = torch.zeros_like(self.last_grip)
+            self.last_dis[reset_env_ids] = 0.0
+            self.last_grip[reset_env_ids] = 0.0
+
             self._reset_idx(reset_env_ids)
             # update articulation kinematics
             self.scene.write_data_to_sim()

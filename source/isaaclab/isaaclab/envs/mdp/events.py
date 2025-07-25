@@ -829,7 +829,7 @@ def reset_root_state_uniform(
     env_ids: torch.Tensor,
     pose_range: dict[str, tuple[float, float]],
     velocity_range: dict[str, tuple[float, float]],
-    asset_cfg: list[SceneEntityCfg] = [SceneEntityCfg("object1"),SceneEntityCfg("object2")],
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("object"),
 ):
     """Reset the asset root state to a random position and velocity uniformly within the given ranges.
 
@@ -845,55 +845,28 @@ def reset_root_state_uniform(
     ``(min, max)``. If the dictionary does not contain a key, the position or velocity is set to zero for that axis.
     """
     # extract the used quantities (to enable type-hinting)
-    cur_asset = env.scene[asset_cfg[env.scene.object_id].name]
-    # print("env_ids11 :",env_ids)
-    # env_ids = torch.arange(256, device='cuda:0')  # 包含 0 到 255 的 tensor
-    # print("env_ids22 :",env_ids)
-    # print("asset_cfg[env.scene.object_id].name :",asset_cfg[env.scene.object_id].name)
-
-    if env.scene.object_id == 0:
-        # if the first asset is being reset, the second asset is the other one
-        other_asset = env.scene[asset_cfg[1].name]
-        print("other_asset 1")
-        # print("env.scene.object_id :",asset_cfg[1].name)
-        env.scene.object_id = 1  # switch to the second asset for the next reset
-    else:
-        # if the second asset is being reset, the first asset is the other one  
-        other_asset = env.scene[asset_cfg[0].name]
-        print("other_asset 0")
-        # print("env.scene.object_id :",asset_cfg[0].name)
-        env.scene.object_id = 0  # switch to the first asset for the next reset
-    # print("env.scene.object_id :",env.scene.object_id)
-    # print("other_asset :",other_asset.name)
+    asset: RigidObject | Articulation = env.scene[asset_cfg.name]
     # get default root state
-    root_states = cur_asset.data.default_root_state[env_ids].clone()
-    if env.scene.object_id == 0:
-        root_states[:, 1] = 0
-    # print("root_states", root_states.shape)
+    root_states = asset.data.default_root_state[env_ids].clone()
+
     # poses
     range_list = [pose_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
-    ranges = torch.tensor(range_list, device=cur_asset.device)
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=cur_asset.device)
-    # print("env.scene.env_origins[env_ids] :",env.scene.env_origins[env_ids].shape)
+    ranges = torch.tensor(range_list, device=asset.device)
+    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=asset.device)
+
     positions = root_states[:, 0:3] + env.scene.env_origins[env_ids] + rand_samples[:, 0:3]
     orientations_delta = math_utils.quat_from_euler_xyz(rand_samples[:, 3], rand_samples[:, 4], rand_samples[:, 5])
     orientations = math_utils.quat_mul(root_states[:, 3:7], orientations_delta)
     # velocities
     range_list = [velocity_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z", "roll", "pitch", "yaw"]]
-    ranges = torch.tensor(range_list, device=cur_asset.device)
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=cur_asset.device)
+    ranges = torch.tensor(range_list, device=asset.device)
+    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 6), device=asset.device)
 
     velocities = root_states[:, 7:13] + rand_samples
 
     # set into the physics simulation
-    cur_positins = torch.tensor([-0.28, -0.3, 0.0],device=other_asset.device).repeat(len(env_ids),1)
-    cur_positins += env.scene.env_origins[env_ids]  # add the environment origin to the position
-    other_asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
-    other_asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
-    cur_asset.write_root_pose_to_sim(
-        torch.cat([cur_positins, torch.tensor([1,0,0,0],device=other_asset.device).repeat(len(env_ids),1)], dim=-1), env_ids=env_ids
-    )  # also set the pose of the current asset to the same position and orientation
-    cur_asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
+    asset.write_root_pose_to_sim(torch.cat([positions, orientations], dim=-1), env_ids=env_ids)
+    asset.write_root_velocity_to_sim(velocities, env_ids=env_ids)
 
 def reset_root_state_with_random_orientation(
     env: ManagerBasedEnv,

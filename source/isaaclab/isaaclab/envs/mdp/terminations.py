@@ -61,7 +61,7 @@ def bad_orientation(
 
 
 def root_height_below_minimum(
-    env: ManagerBasedRLEnv, minimum_height: float, object_cfg: list[SceneEntityCfg] = [SceneEntityCfg("robot")]
+    env: ManagerBasedRLEnv, minimum_height: float, asset_cfg:SceneEntityCfg = SceneEntityCfg("robot")
 ) -> torch.Tensor:
     """Terminate when the asset's root height is below the minimum height.
 
@@ -69,7 +69,7 @@ def root_height_below_minimum(
         This is currently only supported for flat terrains, i.e. the minimum height is in the world frame.
     """
     # extract the used quantities (to enable type-hinting)
-    asset = env.scene[object_cfg[env.scene.object_id].name]
+    asset: RigidObject = env.scene[asset_cfg.name]
     return asset.data.root_pos_w[:, 2] < minimum_height
 
 
