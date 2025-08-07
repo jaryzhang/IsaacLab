@@ -194,9 +194,12 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         for _ in range(self.cfg.decimation):
             self._sim_step_counter += 1
             # set actions into buffers
+            # print("actions22 : ",action)
+            # print("ee_data00: ",self.scene["ee_frame"].data.target_pos_w[..., 0, :])
             self.action_manager.apply_action()
             # set actions into simulator
             self.scene.write_data_to_sim()
+            # print("ee_data11: ",self.scene["ee_frame"].data.target_pos_w[..., 0, :])
             # simulate
             self.sim.step(render=False)
             # render between steps only if the GUI or an RTX sensor needs it
@@ -205,7 +208,9 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
             if self._sim_step_counter % self.cfg.sim.render_interval == 0 and is_rendering:
                 self.sim.render()
             # update buffers at sim dt
+            # print("ee_data22: ",self.scene["ee_frame"].data.target_pos_w[..., 0, :])
             self.scene.update(dt=self.physics_dt)
+            # print("ee_data33: ",self.scene["ee_frame"].data.target_pos_w[..., 0, :])
 
         # post-step:
         # -- update env counters (used for curriculum generation)

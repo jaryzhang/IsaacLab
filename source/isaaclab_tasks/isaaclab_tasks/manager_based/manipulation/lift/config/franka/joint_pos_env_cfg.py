@@ -11,7 +11,6 @@ from isaaclab.sensors import TiledCameraCfg
 from isaaclab.sensors.frame_transformer.frame_transformer_cfg import OffsetCfg
 from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
-from isaaclab.sim.spawners.wrappers import MultiUsdFileCfg
 from isaaclab.utils import configclass
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 
@@ -32,14 +31,15 @@ from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 
 MY_ROBOT_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"/home/roborock/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift/robot_model/arm_description/urdf/marm_backup/marm_backup.usd",
+        usd_path=f"/home/roborock/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift/robot_model/arm_description/urdf/R50/r50_v5/r50_v5.usd",
+        # usd_path=f"/home/xuyang/xuyang_ws/DRL/isaac/IsaacLab-2.0.0/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift/robot_model/arm_description/urdf/marm_backup/marm_backup.usd",
         activate_contact_sensors=False,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
             disable_gravity=False,
             max_depenetration_velocity=5.0,
         ),
         articulation_props=sim_utils.ArticulationRootPropertiesCfg(
-            enabled_self_collisions=True,
+            enabled_self_collisions=False  ,
             solver_position_iteration_count=16,
             solver_velocity_iteration_count=16,
         ),
@@ -47,31 +47,33 @@ MY_ROBOT_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
-            "joint1": 0.0,         # 底座旋转
-            "joint2": 0.8,         # 机械臂1
-            "joint3": 0.0,         # 机械臂2
-            "joint3_and_up": 0.0,  # 旋转
-            "finger_joint1": 0.0,
-            "finger_joint2": 0.0,
+            # "M0": 0,    # 锁死
+            # "M1": 1.57,  # 锁死
+            # "M2": 1.57,  # 锁死
+            "M3": 3.80,
+            "M4": 1.4,
+            "M5": 0.0,
+            "M6_1": 0.35,
+            "M6_2": 0.35,
         },
     ),
     actuators={
         "shoulder": ImplicitActuatorCfg(
-            joint_names_expr=["joint[1-3]"],
+            joint_names_expr=["M[0-4]"],
             effort_limit=87.0,
-            velocity_limit=0.17,  # 2.175
+            velocity_limit=0.3,  # 2.175  0.17  0.5
             stiffness=80.0,
             damping=4.0,
         ),
         "forearm": ImplicitActuatorCfg(
-            joint_names_expr=["joint3_and_up"],
+            joint_names_expr=["M5"],
             effort_limit=12.0,
-            velocity_limit=0.17,  # 2.61
+            velocity_limit=0.3,  # 2.61  0.17  0.5
             stiffness=80.0,
             damping=4.0,
         ),
         "hand": ImplicitActuatorCfg(
-            joint_names_expr=["finger_joint.*"],
+            joint_names_expr=["M6_.*"],
             effort_limit=200.0,
             velocity_limit=0.2,
             stiffness=2e3,
@@ -94,7 +96,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         # Set actions for the specific robot type (CoarseArm)
         self.actions.arm_action = mdp.JointPositionActionCfg(
             #asset_name="robot", joint_names=["panda_joint.*"], scale=0.5, use_default_offset=True
-            asset_name = "robot", joint_names = ["joint.*"], scale = 0.3, use_default_offset = True
+            asset_name = "robot", joint_names = ["M[3-5]"], scale = 0.3, use_default_offset = True
         )
         
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
@@ -102,45 +104,67 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
             #joint_names=["panda_finger.*"],
             #open_command_expr={"panda_finger_.*": 0.04},
             #close_command_expr={"panda_finger_.*": 0.0},
-            joint_names=["finger.*"],
-            open_command_expr={"finger_.*": 0.02},
-            close_command_expr={"finger_.*": 0.0},
+            joint_names=["M6_.*"],
+            open_command_expr={"M6_.*": 0.02},
+            close_command_expr={"M6_.*": 0.0},
         )
         
         # Set the body name for the end effector
         #self.commands.object_pose.body_name = "panda_hand"
-        self.commands.object_pose.body_name = "gripper_finger_link2"
+        # self.commands.object_pose.body_name = "gripper_finger_link2"
+        self.commands.object_pose.body_name = "M6_1_leftfinger_link"
 
         # Set Cube as object
-        self.scene.object = RigidObjectCfg(
-            prim_path="{ENV_REGEX_NS}/Object",
-            #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
-            init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0.0, 0], rot=[1, 0, 0, 0]),
-            spawn=MultiUsdFileCfg(
-                # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
-                usd_path=[f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/green_block.usd"],
-                scale=(0.14, 0.14, 0.14),
-
-                rigid_props=RigidBodyPropertiesCfg(
-                    solver_position_iteration_count=16,
-                    solver_velocity_iteration_count=16,
-                    max_angular_velocity=1000.0,
-                    max_linear_velocity=1000.0,
-                    max_depenetration_velocity=5.0,
-                    disable_gravity=False,
+        self.scene.object= RigidObjectCfg(
+        prim_path="/World/envs/env_.*/Object",
+        spawn=sim_utils.MultiAssetSpawnerCfg(
+            assets_cfg=[
+                sim_utils.CuboidCfg(
+                    size=(0.015, 0.015, 0.015),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
                 ),
-                random_choice=True,
-            ),debug_vis=False,
-        )
+                sim_utils.CuboidCfg(
+                    size=(0.015, 0.015, 0.015),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0), metallic=0.2),
+                )
+            ],
+            random_choice=True,
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(
+                solver_position_iteration_count=4, solver_velocity_iteration_count=0
+            ),
+            mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+        ),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.35, 0.04, 0], rot=[1, 0, 0, 0]),
+    )
+        # self.scene.object1 = RigidObjectCfg(
+        #     prim_path="{ENV_REGEX_NS}/Object1",
+        #     #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
+        #     init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0.0, 0], rot=[1, 0, 0, 0]),
+        #     spawn=UsdFileCfg(
+        #         # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+        #         usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",
+        #         scale=(0.14, 0.14, 0.14),
+
+        #         rigid_props=RigidBodyPropertiesCfg(
+        #             solver_position_iteration_count=16,
+        #             solver_velocity_iteration_count=16,
+        #             max_angular_velocity=1000.0,
+        #             max_linear_velocity=1000.0,
+        #             max_depenetration_velocity=5.0,
+        #             disable_gravity=False,
+        #         ),
+        #     ),debug_vis=False
+        # )
 
         # self.scene.object2 = RigidObjectCfg(
         #     prim_path="{ENV_REGEX_NS}/Object2",
         #     #init_state=RigidObjectCfg.InitialStateCfg(pos=[0.5, 0, 0.055], rot=[1, 0, 0, 0]),
         #     init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, -0.1, 0], rot=[1, 0, 0, 0]),
         #     spawn=UsdFileCfg(
-        #         # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
-        #         usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/green_block.usd",
-        #         scale=(0.14, 0.14, 0.14),
+        #         usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/DexCube/dex_cube_instanceable.usd",
+        #         # usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Blocks/red_block.usd",
+        #         scale=(0.1, 0.1, 0.1),
 
         #         rigid_props=RigidBodyPropertiesCfg(
         #             solver_position_iteration_count=16,
@@ -182,7 +206,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
 
         # Listens to the required transforms
         marker_cfg = FRAME_MARKER_CFG.copy()
-        # marker_cfg.markers["frame"].scale = (0.1, 0.1, 0.1)
+        marker_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
         marker_cfg.prim_path = "/Visuals/FrameTransformer"
         self.scene.ee_frame = FrameTransformerCfg(
             #prim_path="{ENV_REGEX_NS}/Robot/panda_link0",
@@ -192,10 +216,11 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
             target_frames=[
                 FrameTransformerCfg.FrameCfg(
                     #prim_path="{ENV_REGEX_NS}/Robot/panda_hand",
-                    prim_path="{ENV_REGEX_NS}/Robot/gripper_finger_link2",
+                    # prim_path="{ENV_REGEX_NS}/Robot/gripper_finger_link2",
+                    prim_path="{ENV_REGEX_NS}/Robot/M6_1_leftfinger_link",
                     name="end_effector",
                     offset=OffsetCfg(
-                        pos=[0.0, -0.01, 0.016],
+                        pos=[0.035, -0.01, 0],
                     ),
                 ),
             ],

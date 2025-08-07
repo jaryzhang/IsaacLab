@@ -407,10 +407,13 @@ class InteractiveScene:
         """
         # -- assets
         for articulation in self._articulations.values():
+            # print("articulation: ", articulation)
             articulation.update(dt)
         for deformable_object in self._deformable_objects.values():
+            # print("deformable_object: ", deformable_object)
             deformable_object.update(dt)
         for rigid_object in self._rigid_objects.values():
+            # print("rigid_object: ", rigid_object)
             rigid_object.update(dt)
         for rigid_object_collection in self._rigid_object_collections.values():
             rigid_object_collection.update(dt)

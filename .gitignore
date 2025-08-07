@@ -60,3 +60,4 @@ _build
 
 # Pre-Trained Checkpoints
 /.pretrained_checkpoints/
+output_formres1.txt

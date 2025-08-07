@@ -75,6 +75,7 @@ class RigidObjectData:
             dt: The time step for the update. This must be a positive value.
         """
         # update the simulation timestamp
+        # print(f"RigidObjectData update: dt={dt}, sim_timestamp={self._sim_timestamp}")
         self._sim_timestamp += dt
 
     ##

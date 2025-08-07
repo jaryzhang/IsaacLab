@@ -539,6 +539,7 @@ class ArticulationData:
         """Joint velocities of all joints. Shape is (num_instances, num_joints)."""
         if self._joint_vel.timestamp < self._sim_timestamp:
             # read data from simulation and set the buffer data and timestamp
+            # print("Joint Vel time elapsed:", self._sim_timestamp - self._joint_vel.timestamp)
             self._joint_vel.data = self._root_physx_view.get_dof_velocities()
             self._joint_vel.timestamp = self._sim_timestamp
         return self._joint_vel.data
@@ -549,10 +550,14 @@ class ArticulationData:
         if self._joint_acc.timestamp < self._sim_timestamp:
             # note: we use finite differencing to compute acceleration
             time_elapsed = self._sim_timestamp - self._joint_acc.timestamp
+            # print("Joint Acc time elapsed:", time_elapsed)
+            # print("self.joint_vel:", self.joint_vel)
+            # print("self._previous_joint_vel:", self._previous_joint_vel)
             self._joint_acc.data = (self.joint_vel - self._previous_joint_vel) / time_elapsed
             self._joint_acc.timestamp = self._sim_timestamp
             # update the previous joint velocity
             self._previous_joint_vel[:] = self.joint_vel
+        # print(f"Joint Acc: {self._joint_acc.data.shape}, {self._joint_acc.timestamp},{self._joint_acc.data}")
         return self._joint_acc.data
 
     ##

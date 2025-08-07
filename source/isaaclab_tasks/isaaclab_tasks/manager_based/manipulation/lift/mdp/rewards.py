@@ -40,6 +40,10 @@ def object_ee_distance(
     cube_pos_w = object.data.root_pos_w
     # End-effector position: (num_envs, 3)
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
+    if torch.isnan(ee_w).any():
+        print("ee_w存在 NaN 值:", ee_w)
+    if torch.isnan(cube_pos_w).any():
+        print("cube_pos_w 存在 NaN 值:", cube_pos_w)
     # Distance of the end-effector to the object: (num_envs,)
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
     with open('output_formres1.txt', 'a') as f:
@@ -108,12 +112,12 @@ def grip_object(
     #new条件六：夹爪开启
     cond6 = cur_angle <=0
    
-    reward_mask1 = cond1 & cond2 & (cond4 | cond5)
+    reward_mask1 = cond1 & cond2 & (cond4 & cond5)
     # print("reward_mask1: ", reward_mask1)
     reward1 = torch.where(reward_mask1, torch.tensor(1.5), torch.tensor(0.0))
 
     reward_mask2 = (~cond1) & cond2 & (cond3 | cond6)
-    reward2 = torch.where(reward_mask2, torch.tensor(0.75), torch.tensor(0.0))
+    reward2 = torch.where(reward_mask2, torch.tensor(0.8), torch.tensor(0.0))
     
     print("cur_angle: ", cur_angle.mean().item())
 

@@ -76,17 +76,17 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         # ),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.06), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
-        offset=TiledCameraCfg.OffsetCfg(pos=(0.1, 0.0, 0.1), rot=((0.57206, 0.41562, -0.41563, -0.57207)), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0.1, 0.193681, 0.0575158), rot=((0.4912, 0.50865, -0.50865, -0.4912)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
-            focal_length=15.2, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+            focal_length=16.6, focus_distance=400.0, horizontal_aperture=36, clipping_range=(0.1, 20.0),vertical_aperture=25.45
         ),
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         # ),
         width=128,
-        height=128,
+        height=96,
     )
 
     # tiled_camera2: TiledCameraCfg = TiledCameraCfg(
@@ -281,8 +281,8 @@ class EventCfg:
             # "pose_range": {"x": (-0.05, 0.05), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
 
             "pose_range": {
-                "x": (-0.05, 0.05),
-                "y": (-0.05, 0.05),
+                "x": (-0.02, 0.02),
+                "y": (-0.02, 0.02),
                 "z": (0.0, 0.0),
             },
             "velocity_range": {},
@@ -298,20 +298,38 @@ class RewardsCfg:
     reaching_object = RewTerm(
         func=mdp.object_ee_distance,
         params={"std": 0.1},
-        weight=8,  # 2.0
+        weight=10,  # 2.0
         # weight=20.0,
     )
 
     lifting_object = RewTerm(
         func=mdp.object_is_lifted,
-        params={"minimal_height": 0.02},
-        weight=50000.0,   # 1500  150
+        params={"minimal_height": 0.01},
+        weight=50.0,   # 1500  150
     )
+
+    # lifting_object1 = RewTerm(
+    #     func=mdp.object_is_lifted,
+    #     params={"minimal_height": 0.01},
+    #     weight=100.0,   # 1500  150
+    # )
+
+    # lifting_object2 = RewTerm(
+    #     func=mdp.object_is_lifted,
+    #     params={"minimal_height": 0.02},
+    #     weight=200.0,   # 1500  150
+    # )
+
+    # lifting_object3 = RewTerm(
+    #     func=mdp.object_is_lifted,
+    #     params={"minimal_height": 0.04},
+    #     weight=500.0,   # 1500  150
+    # )
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.02, "command_name": "object_pose"},
-        weight=50000, # 16.0
+        params={"std": 0.3, "minimal_height": 0.01, "command_name": "object_pose"},
+        weight=10, # 16.0
     )
 
     object_goal_tracking_fine_grained = RewTerm(
@@ -330,10 +348,10 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    grip_object = RewTerm(
-        func=mdp.grip_object,
-        weight=2,  # 10.0
-    )
+    # grip_object = RewTerm(
+    #     func=mdp.grip_object,
+    #     weight=1,  # 10.0
+    # )
 
 
 @configclass
@@ -371,7 +389,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=256, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=128, env_spacing=2.5)
     # Basic settings
     # observations: ObservationsCfg = ObservationsCfg()
     #observations: TheiaTinyObservationCfg = TheiaTinyObservationCfg()
@@ -387,7 +405,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 48   # 2 20 48
+        self.decimation = 2   # 2 20 48
         self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz

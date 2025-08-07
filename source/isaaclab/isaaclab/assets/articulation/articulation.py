@@ -900,6 +900,10 @@ class Articulation(AssetBase):
         if env_ids != slice(None) and joint_ids != slice(None):
             env_ids = env_ids[:, None]
         # set targets
+        # print("joint_ids :", joint_ids)
+        # print("env_ids :", env_ids)
+        # print("target shape :", target.shape)
+        # print("target :", target)
         self._data.joint_pos_target[env_ids, joint_ids] = target
 
     def set_joint_velocity_target(
