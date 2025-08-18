@@ -23,6 +23,7 @@ def object_is_lifted(
     env: ManagerBasedRLEnv, minimal_height: float, object_cfg: SceneEntityCfg = SceneEntityCfg("object")):
     """Reward the agent for lifting the object above the minimal height."""
     object: RigidObject = env.scene[object_cfg.name]
+    # print("height: ",object.data.root_pos_w[:, 2].mean().item())
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0)
 
 
@@ -40,6 +41,8 @@ def object_ee_distance(
     cube_pos_w = object.data.root_pos_w
     # End-effector position: (num_envs, 3)
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
+    # print("ee_w: ", ee_w[:,2].mean().item())
+    # print("cube_pos_w: ", cube_pos_w)
     if torch.isnan(ee_w).any():
         print("ee_w存在 NaN 值:", ee_w)
     if torch.isnan(cube_pos_w).any():
@@ -98,7 +101,7 @@ def grip_object(
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
     cur_angle = env.scene['robot'].data.joint_pos_target[:, 5]
     #条件一：当前dis小于0.01
-    cond1 = object_ee_distance < 0.015
+    cond1 = object_ee_distance < 0.025
     #条件二：在接近物体
     cond2 = object_ee_distance < env.last_dis
     #条件三：夹爪在逐渐闭合
@@ -107,23 +110,27 @@ def grip_object(
     cond3 = cur_angle < env.last_grip
     #new条件四：夹爪逐渐闭合
     cond4 = cur_angle > env.last_grip
-    #new条件五：夹爪全部或部分闭合
-    cond5 = cur_angle > 0
+    #new条件五：夹爪全部或部分闭合True
+    cond5 = cur_angle >= 1.5
     #new条件六：夹爪开启
     cond6 = cur_angle <=0
+
+    cond7 = object_ee_distance <0.05
    
-    reward_mask1 = cond1 & cond2 & (cond4 & cond5)
+    reward_mask1 = cond1 & cond2 & cond3 
+    reward_mask3 = cond1 & (~cond2) & (~cond3)
+    reward_mask4 = cond1 & cond2 & (~cond2) &(cond3)
     # print("reward_mask1: ", reward_mask1)
-    reward1 = torch.where(reward_mask1, torch.tensor(1.5), torch.tensor(0.0))
-
-    reward_mask2 = (~cond1) & cond2 & (cond3 | cond6)
+    reward1 = torch.where(reward_mask1, torch.tensor(1.5), torch.tensor(0.8))
+    reward3 = torch.where(reward_mask3, torch.tensor(1.2), torch.tensor(0.0))
+    reward_mask2 = (~cond1) & cond2 & (cond4 | cond5) & cond7
     reward2 = torch.where(reward_mask2, torch.tensor(0.8), torch.tensor(0.0))
-    
-    print("cur_angle: ", cur_angle.mean().item())
-
+    with open('output_formres2.txt', 'a') as f:
+       f.write(f"step {env.common_step_counter} dis: {cur_angle.mean().item()}\n")
+    reward4 = torch.where(reward_mask4, torch.tensor(1.8), torch.tensor(0.8))
     #更新last_dis和last_angle
     env.last_dis = object_ee_distance
     env.last_grip = cur_angle
 
 
-    return reward1+reward2
+    return reward1+reward2+reward3+reward4

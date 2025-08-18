@@ -26,12 +26,12 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://00_r50_arm_2_7_asm_09059.SLDASM/meshes/base_link.STL" />
+          filename="package://00_r50_arm_2_7_asm_09059.SLDASM/meshes/base_link.STL" scale="0.5 0.5 0.5" />
       </geometry>
       <material
         name="">
         <color
-          rgba="0.79216 0.81961 0.93333 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -40,7 +40,7 @@
         rpy="0 0 0" />
       <geometry>
         <mesh
-          filename="package://00_r50_arm_2_7_asm_09059.SLDASM/meshes/base_link.STL" />
+          filename="package://00_r50_arm_2_7_asm_09059.SLDASM/meshes/base_link.STL" scale="0.5 0.5 0.5"/>
       </geometry>
     </collision>
   </link>
@@ -71,7 +71,7 @@
       <material
         name="">
         <color
-          rgba="0.79216 0.81961 0.93333 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -86,7 +86,7 @@
   </link>
   <joint
     name="M0"
-    type="fixed">
+    type="continuous">
     <origin
       xyz="0 0 0"
       rpy="0 0 0" />
@@ -96,11 +96,11 @@
       link="M0_chassis_link" />
     <axis
       xyz="0 0 1" />
-    <!-- <limit
-      lower="-3.1416"
-      upper="3.1416"
+    <limit
+      lower="-1.57"
+      upper="1.57"
       effort="0"
-      velocity="0" /> -->
+      velocity="0" />
   </joint>
   <link
     name="M1_waist_link">
@@ -129,7 +129,7 @@
       <material
         name="">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -187,7 +187,7 @@
       <material
         name="">
         <color
-          rgba="1 0.447058823529412 0 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -245,7 +245,7 @@
       <material
         name="">
         <color
-          rgba="0.631372549019608 0.686274509803922 0.749019607843137 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -271,10 +271,10 @@
     <axis
       xyz="0 1 0" />
     <limit
-      lower="3.54"
-      upper="4.7116"
-      effort="1"
-      velocity="1" />
+      lower="3."
+      upper="5。2"
+      effort="100"
+      velocity="5" />
   </joint>
   <link
     name="M4_Carm_link">
@@ -303,7 +303,7 @@
       <material
         name="">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -331,8 +331,8 @@
     <limit
       lower="1.23"
       upper="3.1416"
-      effort="1"
-      velocity="1" />
+      effort="100"
+      velocity="5" />
   </joint>
   <link
     name="M5_wrist_link">
@@ -361,7 +361,7 @@
       <material
         name="">
         <color
-          rgba="0.631372549019608 0.686274509803922 0.749019607843137 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -389,8 +389,8 @@
     <limit
       lower="-2.4422"
       upper="3.1416"
-      effort="1"
-      velocity="1" />
+      effort="100"
+      velocity="5" />
   </joint>
   <link
     name="M6_1_leftfinger_link">
@@ -419,7 +419,7 @@
       <material
         name="">
         <color
-          rgba="1 1 0 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -434,7 +434,7 @@
   </link>
   <joint
     name="M6_1"
-    type="revolute">
+    type="prismatic">
     <origin
       xyz="0.0605 0.010481 0.0041935"
       rpy="0 0 0" />
@@ -443,12 +443,12 @@
     <child
       link="M6_1_leftfinger_link" />
     <axis
-      xyz="0 0 1" />
+      xyz="0 1 0" />
     <limit
-      lower="0"
-      upper="1.7453"
-      effort="1"
-      velocity="1" />
+      lower="0.0"
+      upper="0.04"
+      effort="100"
+      velocity="5" />
   </joint>
   <link
     name="M6_1_1_LINK">
@@ -477,7 +477,7 @@
       <material
         name="">
         <color
-          rgba="0 1 0 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -530,7 +530,7 @@
       <material
         name="">
         <color
-          rgba="0.631372549019608 0.686274509803922 0.749019607843137 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -545,7 +545,7 @@
   </link>
   <joint
     name="M6_2"
-    type="revolute">
+    type="prismatic">
     <origin
       xyz="0.060499999999997 -0.00561918249785904 0.00420384064232358"
       rpy="0 0 0" />
@@ -554,12 +554,12 @@
     <child
       link="M6_2_rightfinger_link" />
     <axis
-      xyz="0 0 -1" />
+      xyz="0 -1 0" />
     <limit
       lower="0"
-      upper="1.7453"
-      effort="1"
-      velocity="1" />
+      upper="0.04"
+      effort="100"
+      velocity="5" />
   </joint>
   <link
     name="M6_2_2_LINK">
@@ -588,7 +588,7 @@
       <material
         name="">
         <color
-          rgba="0 1 0 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -641,7 +641,7 @@
       <material
         name="">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -694,7 +694,7 @@
       <material
         name="">
         <color
-          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>
@@ -747,7 +747,7 @@
       <material
         name="">
         <color
-          rgba="0.427450980392157 0.749019607843137 0.592156862745098 1" />
+          rgba="0 0 0 1" />
       </material>
     </visual>
     <collision>

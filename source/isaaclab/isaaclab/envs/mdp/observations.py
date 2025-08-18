@@ -278,11 +278,13 @@ def image(
 
     # obtain the input image
     images = sensor.data.output[data_type]
-
+    # print("images shape :",images.shape)
     # rendered_images = env.scene.sensors[SceneEntityCfg("tiled_camera2").name].data.output[data_type]
     # rgb_image_tensor = torch.tensor(rendered_images).float()
     # print("shape :",rendered_images.shape)
     # depth image conversion
+    images = images[:, :, images.shape[2] // 2:, :]
+    
     if (data_type == "distance_to_camera") and convert_perspective_to_orthogonal:
         images = math_utils.orthogonalize_perspective_depth(images, sensor.data.intrinsic_matrices)
     # obs_np = rgb_image_tensor.squeeze(0).cpu().numpy() 

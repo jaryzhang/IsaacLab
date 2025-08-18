@@ -47,28 +47,28 @@ MY_ROBOT_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
-            # "M0": 0,    # 锁死
+            "M0": 0,    # 锁死
             # "M1": 1.57,  # 锁死
             # "M2": 1.57,  # 锁死
             "M3": 3.80,
             "M4": 1.4,
             "M5": 0.0,
-            "M6_1": 0.35,
-            "M6_2": 0.35,
+            "M6_1": 0.0,
+            "M6_2": 0.0,
         },
     ),
     actuators={
         "shoulder": ImplicitActuatorCfg(
             joint_names_expr=["M[0-4]"],
             effort_limit=87.0,
-            velocity_limit=0.3,  # 2.175  0.17  0.5
+            velocity_limit=2.175,  # 2.175  0.17  0.5
             stiffness=80.0,
             damping=4.0,
         ),
         "forearm": ImplicitActuatorCfg(
             joint_names_expr=["M5"],
             effort_limit=12.0,
-            velocity_limit=0.3,  # 2.61  0.17  0.5
+            velocity_limit=0.5,  # 2.61  0.17  0.5
             stiffness=80.0,
             damping=4.0,
         ),
@@ -96,7 +96,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         # Set actions for the specific robot type (CoarseArm)
         self.actions.arm_action = mdp.JointPositionActionCfg(
             #asset_name="robot", joint_names=["panda_joint.*"], scale=0.5, use_default_offset=True
-            asset_name = "robot", joint_names = ["M[3-5]"], scale = 0.3, use_default_offset = True
+            asset_name = "robot", joint_names = ["M[0345]"], scale = 0.3, use_default_offset = True
         )
         
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
@@ -105,26 +105,31 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
             #open_command_expr={"panda_finger_.*": 0.04},
             #close_command_expr={"panda_finger_.*": 0.0},
             joint_names=["M6_.*"],
-            open_command_expr={"M6_.*": 0.02},
+            open_command_expr={"M6_.*": 0.04},
             close_command_expr={"M6_.*": 0.0},
         )
+
+        # self.actions.gripper_action = mdp.JointPositionActionCfg(
+        #     #asset_name="robot", joint_names=["panda_joint.*"], scale=0.5, use_default_offset=True
+        #     asset_name = "robot", joint_names = ["M6_.*"], use_default_offset = True
+        # )
         
         # Set the body name for the end effector
         #self.commands.object_pose.body_name = "panda_hand"
         # self.commands.object_pose.body_name = "gripper_finger_link2"
         self.commands.object_pose.body_name = "M6_1_leftfinger_link"
-
+        cube_size = 0.022
         # Set Cube as object
         self.scene.object= RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
         spawn=sim_utils.MultiAssetSpawnerCfg(
             assets_cfg=[
                 sim_utils.CuboidCfg(
-                    size=(0.015, 0.015, 0.015),
+                    size=(cube_size, cube_size, cube_size),
                     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
                 ),
                 sim_utils.CuboidCfg(
-                    size=(0.015, 0.015, 0.015),
+                    size=(cube_size, cube_size, cube_size),
                     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0), metallic=0.2),
                 )
             ],
@@ -135,7 +140,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
             mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
             collision_props=sim_utils.CollisionPropertiesCfg(),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.35, 0.04, 0], rot=[1, 0, 0, 0]),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0.04, 0], rot=[1, 0, 0, 0]),
     )
         # self.scene.object1 = RigidObjectCfg(
         #     prim_path="{ENV_REGEX_NS}/Object1",
@@ -206,7 +211,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
 
         # Listens to the required transforms
         marker_cfg = FRAME_MARKER_CFG.copy()
-        marker_cfg.markers["frame"].scale = (0.01, 0.01, 0.01)
+        # marker_cfg.markers["frame"].scale = (0.03, 0.03, 0.03)
         marker_cfg.prim_path = "/Visuals/FrameTransformer"
         self.scene.ee_frame = FrameTransformerCfg(
             #prim_path="{ENV_REGEX_NS}/Robot/panda_link0",
@@ -217,10 +222,11 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
                 FrameTransformerCfg.FrameCfg(
                     #prim_path="{ENV_REGEX_NS}/Robot/panda_hand",
                     # prim_path="{ENV_REGEX_NS}/Robot/gripper_finger_link2",
-                    prim_path="{ENV_REGEX_NS}/Robot/M6_1_leftfinger_link",
+                    # prim_path="{ENV_REGEX_NS}/Robot/M6_1_leftfinger_link",
+                    prim_path="{ENV_REGEX_NS}/Robot/M5_wrist_link",
                     name="end_effector",
                     offset=OffsetCfg(
-                        pos=[0.035, -0.01, 0],
+                        pos=[0.10, 0, -0.0015],
                     ),
                 ),
             ],

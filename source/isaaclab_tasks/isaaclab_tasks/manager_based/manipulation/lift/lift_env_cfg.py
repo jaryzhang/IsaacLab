@@ -85,8 +85,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         # ),
-        width=128,
-        height=96,
+        width=200,
+        height=150,
     )
 
     # tiled_camera2: TiledCameraCfg = TiledCameraCfg(
@@ -281,8 +281,8 @@ class EventCfg:
             # "pose_range": {"x": (-0.05, 0.05), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
 
             "pose_range": {
-                "x": (-0.02, 0.02),
-                "y": (-0.02, 0.02),
+                "x": (-0.01, 0.01),
+                "y": (-0.03, 0.03),
                 "z": (0.0, 0.0),
             },
             "velocity_range": {},
@@ -298,44 +298,44 @@ class RewardsCfg:
     reaching_object = RewTerm(
         func=mdp.object_ee_distance,
         params={"std": 0.1},
-        weight=10,  # 2.0
+        weight=20,  # 2.0
         # weight=20.0,
     )
 
     lifting_object = RewTerm(
         func=mdp.object_is_lifted,
-        params={"minimal_height": 0.01},
+        params={"minimal_height": 0.008},
         weight=50.0,   # 1500  150
     )
 
-    # lifting_object1 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.01},
-    #     weight=100.0,   # 1500  150
-    # )
+    lifting_object1 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.015},
+        weight=10000.0,   # 1500  150
+    )
 
-    # lifting_object2 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.02},
-    #     weight=200.0,   # 1500  150
-    # )
+    lifting_object2 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.024},
+        weight=20000.0,   # 1500  150
+    )
 
-    # lifting_object3 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.04},
-    #     weight=500.0,   # 1500  150
-    # )
+    lifting_object3 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.04},
+        weight=50000.0,   # 1500  150
+    )
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.01, "command_name": "object_pose"},
-        weight=10, # 16.0
+        params={"std": 0.3, "minimal_height": 0.015, "command_name": "object_pose"},
+        weight=200, # 16.0
     )
 
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
         #params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
-        params={"std": 0.05, "minimal_height": 0.01, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.015, "command_name": "object_pose"},
         weight=0.5,  # 5.0
     )
 
@@ -348,10 +348,10 @@ class RewardsCfg:
         params={"asset_cfg": SceneEntityCfg("robot")},
     )
 
-    # grip_object = RewTerm(
-    #     func=mdp.grip_object,
-    #     weight=1,  # 10.0
-    # )
+    grip_object = RewTerm(
+        func=mdp.grip_object,
+        weight=10,  # 10.0
+    )
 
 
 @configclass
@@ -405,7 +405,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 2   # 2 20 48
+        self.decimation = 20  # 2 20 48
         self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
