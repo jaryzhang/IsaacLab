@@ -131,6 +131,9 @@ def grip_object(
     #更新last_dis和last_angle
     env.last_dis = object_ee_distance
     env.last_grip = cur_angle
-
+    # print("reward1: ", reward1.mean().item())
+    # print("reward2: ", reward2.mean().item())
+    # print("reward3: ", reward3.mean().item())   
+    # print("reward4: ", reward4.mean().item())
 
     return reward1+reward2+reward3+reward4
