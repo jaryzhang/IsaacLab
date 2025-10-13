@@ -278,13 +278,20 @@ def image(
 
     # obtain the input image
     images = sensor.data.output[data_type]
-    # print("images shape :",images.shape)
-    # rendered_images = env.scene.sensors[SceneEntityCfg("tiled_camera2").name].data.output[data_type]
-    # rgb_image_tensor = torch.tensor(rendered_images).float()
-    # print("shape :",rendered_images.shape)
     # depth image conversion
-    images = images[:, :, images.shape[2] // 2:, :]
-    
+    # images = images[:, :, images.shape[2] // 2:, :]
+
+    # obs_image = torch.tensor(images).float().squeeze(0).cpu().numpy()  # Convert to tensor and float type
+    # obs_bgr = cv2.cvtColor(obs_image, cv2.COLOR_RGB2BGR)
+    # os.makedirs("IMAGES2", exist_ok=True)
+    # # os.makedirs("IMAGES17", exist_ok=True)
+    # time1 = time.time()
+    # # cv2.imwrite(f"./IMAGES16/observation_{time1}.png", obs_image)
+    # cv2.imwrite(f"./IMAGES2/observation_{time1}.png", obs_bgr)
+    # with open('output_formres9.txt', 'a') as f:
+    #     f.write(f"observation_{time1}.png\n")
+    # print(f"./IMAGES2/observation_{time1}.png")
+
     if (data_type == "distance_to_camera") and convert_perspective_to_orthogonal:
         images = math_utils.orthogonalize_perspective_depth(images, sensor.data.intrinsic_matrices)
     # obs_np = rgb_image_tensor.squeeze(0).cpu().numpy() 
@@ -318,8 +325,8 @@ def image(
 
             # # RGB 转 BGR 再保存
             # obs_bgr2 = cv2.cvtColor(obs_np2, cv2.COLOR_RGB2BGR)
-            # os.makedirs("IMAGES6", exist_ok=True)
-            # cv2.imwrite(f"./IMAGES6/observation_{time.time()}.png", obs_bgr2)
+            # os.makedirs("IMAGES13", exist_ok=True)
+            # cv2.imwrite(f"./IMAGES13/observation_{time.time()}.png", obs_np2)
             
             pass
         elif "distance_to" in data_type or "depth" in data_type:

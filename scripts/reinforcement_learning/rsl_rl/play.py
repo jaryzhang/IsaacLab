@@ -13,6 +13,7 @@ from isaaclab.app import AppLauncher
 
 # local imports
 import cli_args  # isort: skip
+import cv2  # isort: skip
 
 # add argparse arguments
 parser = argparse.ArgumentParser(description="Train an RL agent with RSL-RL.")
@@ -128,10 +129,10 @@ def main():
         policy_nn = ppo_runner.alg.actor_critic
 
     # export policy to onnx/jit
-    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
+    export_model_dir = os.path.join(os.path.dirname(resume_path), "exported2")
     export_policy_as_jit(policy_nn, ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.pt")
     export_policy_as_onnx(
-        policy_nn, normalizer=ppo_runner.obs_normalizer, path=export_model_dir, filename="policy.onnx"
+        policy_nn, normalizer=ppo_runner.obs_normalizer, path=export_model_dir, filename="policy828.onnx"
     )
 
     dt = env.unwrapped.step_dt
@@ -141,15 +142,33 @@ def main():
     timestep = 0
     # simulate environment
     while simulation_app.is_running():
-        start_time = time.time()
         # run everything in inference mode
         with torch.inference_mode():
             # agent stepping
-
+            # img = cv2.imread("/home/roborock/IsaacLab/1.png")
+            # img_bgr = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            # img_float = img_bgr.astype('float32')
+            # mean_val = img_float.mean(axis=(0, 1), keepdims=True)   # shape (1,1,3)
+            # img_norm = (img_float - mean_val) / 255.0
+            # obs = torch.from_numpy(img_norm).unsqueeze(0)  # Add batch
+            # obs = obs.to(device=env.unwrapped.device)
             #改动
+            # print("obs0 : ",obs)
+            # with open("obs.txt", "w") as f:
+            #     for i in range(obs.shape[0]):
+            #         for j in range(obs.shape[1]):
+            #             f.write(f"obs[{i},{j}] = {obs[i,j].item():.6f}\n")
+
             obs = obs.permute(0, 3, 1, 2)
+            # print("obs1 : ",obs)
             actions = policy(obs)
-            # print("actions:", actions)
+            # with open("obs1.txt", "w") as f:
+            #     for i in range(obs.shape[0]):
+            #         for j in range(obs.shape[1]):
+            #             f.write(f"obs[{i},{j}] = {obs[i,j].item():.6f}\n")
+            # with open('output_formres9.txt', 'a') as f:
+            #     f.write(f"actions : {actions}\n")
+            print("actions : ",actions)
             # actions[:, -1] = 0.01
             # env stepping
             obs, _, _, _ = env.step(actions)

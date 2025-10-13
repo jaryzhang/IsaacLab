@@ -27,32 +27,6 @@ def object_is_lifted(
     # print("height: ",object.data.root_pos_w[:, 2].mean().item())
     return torch.where(object.data.root_pos_w[:, 2] > minimal_height, 1.0, 0.0)
 
-def object_is_lifted_linear(
-    env: ManagerBasedRLEnv, 
-    minimal_height: float, 
-    max_height: float,
-    object_cfg: SceneEntityCfg = SceneEntityCfg("object")
-    ):
-    """Linearly reward the agent for lifting the object above the minimal height."""
-    object: RigidObject = env.scene[object_cfg.name]
-    current_height = object.data.root_pos_w[:, 2]
-    # print("height: ",object.data.root_pos_w[:, 2].mean().item())
-
-    # 限制在 [minimal_height, max_height] 之间
-    clipped_height = torch.clamp(current_height, minimal_height, max_height)
-    # 线性归一化到 [0, 1]
-    normalized = (clipped_height - minimal_height) / (max_height - minimal_height)
-    # 平方 → 增强高举的奖励（靠近 max_height 增长更快）
-    reward = torch.square(normalized)
-
-    # if env.common_step_counter % 50 == 0:  # 每 50 步打印一次，避免太多输出
-    #     with open("debug_lift_reward_square.txt", "a") as f:
-    #         f.write(
-    #             f"[Step {env.common_step_counter}] "
-    #             f"mean_height={current_height.mean().item():.3f}, "
-    #             f"mean_reward={reward.mean().item():.3f}\n"
-    #         )
-    return reward
 
 def object_ee_distance(
     env: ManagerBasedRLEnv,
@@ -68,7 +42,8 @@ def object_ee_distance(
     cube_pos_w = object.data.root_pos_w
     # End-effector position: (num_envs, 3)
     ee_w = ee_frame.data.target_pos_w[..., 0, :]
-    
+    # print("ee_w: ", ee_w[:,2].mean().item())
+    # print("cube_pos_w: ", cube_pos_w)
     if torch.isnan(ee_w).any():
         print("ee_w存在 NaN 值:", ee_w)
     if torch.isnan(cube_pos_w).any():
@@ -76,8 +51,8 @@ def object_ee_distance(
     # Distance of the end-effector to the object: (num_envs,)
     object_ee_distance = torch.norm(cube_pos_w - ee_w, dim=1)
     with open('output_formres1.txt', 'a') as f:
-       f.write(f"ee_w {ee_w[:,2].mean().item()} dis: {torch.mean(object_ee_distance).item()},"
-               f"cube_pos_w: {cube_pos_w[:,2].mean().item()}\n")
+       f.write(f"step {env.common_step_counter} dis: {torch.mean(object_ee_distance).item()},"
+               f"reward: {torch.mean(1 - torch.tanh(object_ee_distance / std)).item()}, std: {std}\n")
     return 1 - torch.tanh(object_ee_distance/std)
 
 
@@ -96,8 +71,6 @@ def object_goal_distance(
     command = env.command_manager.get_command(command_name)
     # compute the desired position in the world frame
     des_pos_b = command[:, :3]
-    import pdb
-    # pdb.set_trace()
     des_pos_w, _ = combine_frame_transforms(robot.data.root_state_w[:, :3], robot.data.root_state_w[:, 3:7], des_pos_b)
     # distance of the end-effector to the object: (num_envs,)
     distance = torch.norm(des_pos_w - object.data.root_pos_w[:, :3], dim=1)
@@ -140,14 +113,14 @@ def grip_object(
     cond4 = cur_angle > env.last_grip
     #new条件五：夹爪全部或部分闭合True
     cond5 = cur_angle >= 1.5
-
-    cond6 = object_ee_distance == env.last_dis
+    #new条件六：夹爪开启
+    cond6 = cur_angle <=0
 
     cond7 = object_ee_distance <0.05
    
     reward_mask1 = cond1 & cond2 & cond3 
     reward_mask3 = cond1 & (~cond2) & (~cond3)
-    reward_mask4 = cond1 & cond6 &(cond3)
+    reward_mask4 = cond1 & cond2 & (~cond2) &(cond3)
     # print("reward_mask1: ", reward_mask1)
     reward1 = torch.where(reward_mask1, torch.tensor(1.5), torch.tensor(0.8))
     reward3 = torch.where(reward_mask3, torch.tensor(1.2), torch.tensor(0.0))
@@ -220,7 +193,7 @@ def clamp_object(
 
     theta = torch.acos(cos_theta)
 
-    cur_angle = env.scene['robot'].data.joint_pos_target[:, 4] # 取机器人第 6 个关节（索引 5）的目标角度 → 这里应该是 夹爪的开合角度。
+    cur_angle = env.scene['robot'].data.joint_pos_target[:, 5]
     cond1 = cur_angle < 0.001
     cond2 = theta > np.pi * 4.5 / 6
     mask = cond1 & cond2

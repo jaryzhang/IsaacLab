@@ -53,13 +53,6 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
     #     spawn=UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd"),
     # )
 
-    # plane
-    plane = AssetBaseCfg(
-        prim_path="/World/GroundPlane",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[0, 0, -1.05]),
-        spawn=GroundPlaneCfg(),
-    )
-
     # FloorWithPanels
     FloorWithPanels = AssetBaseCfg(
         prim_path="{ENV_REGEX_NS}/FloorwithPanels",
@@ -67,13 +60,20 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
             pos=[-0.04, 1.2, 0.775],
             rot=[0, 0, 0, 1],
         ),
-        spawn=UsdFileCfg(usd_path="/home/roborock/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift/robot_model/arm_description/urdf/R50/assets/FloorWithPanels.usd"),
+        spawn=UsdFileCfg(usd_path="/home/roborock/data/private/sunwenxiu/git/IsaacLab_1/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift_jiulin/robot_model/assets/FloorWithPanels.usd"),
+    )
+
+    # plane
+    plane = AssetBaseCfg(
+        prim_path="/World/GroundPlane",
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[0, 0, -1.05]),
+        spawn=GroundPlaneCfg(),
     )
 
     # lights
     light = AssetBaseCfg(
         prim_path="/World/light",
-        spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=2000.0),
+        spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=3000.0),
     )
 
     tiled_camera: TiledCameraCfg = TiledCameraCfg(
@@ -88,17 +88,17 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         # ),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.06), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
-        offset=TiledCameraCfg.OffsetCfg(pos=(0.162, -0.0293681, 0.075), rot=((0.4912, 0.50865, -0.50865, -0.4912)), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0.162, 0.0193681, 0.0575158), rot=((0.4912, 0.50865, -0.50865, -0.4912)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
-            focal_length=10.6, focus_distance=400.0, horizontal_aperture=36, vertical_aperture=25.45
+            focal_length=16.6, focus_distance=400.0, horizontal_aperture=36, clipping_range=(0.1, 20.0),vertical_aperture=25.45
         ),
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
         # ),
-        width=400,
-        height=300,
+        width=200,
+        height=150,
     )
 
     # tiled_camera2: TiledCameraCfg = TiledCameraCfg(
@@ -293,8 +293,8 @@ class EventCfg:
             # "pose_range": {"x": (-0.05, 0.05), "y": (-0.25, 0.25), "z": (0.0, 0.0)},
 
             "pose_range": {
-                "x": (0.02, 0.03),
-                "y": (0, 0),
+                "x": (-0.01, 0.01),
+                "y": (-0.03, 0.03),
                 "z": (0.0, 0.0),
             },
             "velocity_range": {},
@@ -316,52 +316,45 @@ class RewardsCfg:
 
     # lifting_object = RewTerm(
     #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.018},
+    #     params={"minimal_height": 0.015},
     #     weight=50.0,   # 1500  150
     # )
 
-    # reward shaping（奖励塑形）：给一些“中间奖励”
-    # lifting_object1 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.025},
-    #     weight=100.0,   # 1500  150
-    # )
+    lifting_object1 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.02},
+        weight=100.0,   # 1500  150
+    )
 
-    # lifting_object2 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.035},
-    #     weight=200.0,   # 1500  150
-    # )
+    lifting_object2 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.03},
+        weight=200.0,   # 1500  150
+    )
 
-    # lifting_object3 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.045},
-    #     weight=500.0,   # 1500  150
-    # )
-
-    lifting_object_linear = RewTerm(
-        func=mdp.object_is_lifted_linear,
-        params={"minimal_height": 0.025, "max_height": 0.055},
+    lifting_object3 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.04},
         weight=500.0,   # 1500  150
     )
 
-    # lifting_object4 = RewTerm(
-    #     func=mdp.object_is_lifted,
-    #     params={"minimal_height": 0.05},
-    #     weight=1000.0,   # 1500  150
-    # )
+    lifting_object4 = RewTerm(
+        func=mdp.object_is_lifted,
+        params={"minimal_height": 0.05},
+        weight=1000.0,   # 1500  150
+    )
 
     object_goal_tracking = RewTerm(
         func=mdp.object_goal_distance,
-        params={"std": 0.3, "minimal_height": 0.028, "command_name": "object_pose"},
-        weight=1000.0,  # 16.0
+        params={"std": 0.3, "minimal_height": 0.015, "command_name": "object_pose"},
+        weight=0, # 16.0
     )
 
     object_goal_tracking_fine_grained = RewTerm(
         func=mdp.object_goal_distance,
-        # params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
-        params={"std": 0.05, "minimal_height": 0.028, "command_name": "object_pose"},
-        weight=0.5,  # 5.0
+        #params={"std": 0.05, "minimal_height": 0.04, "command_name": "object_pose"},
+        params={"std": 0.05, "minimal_height": 0.015, "command_name": "object_pose"},
+        weight=0.0,  # 5.0
     )
 
     # action penalty
@@ -426,7 +419,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=32, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=128, env_spacing=2.5, replicate_physics=False)
     # Basic settings
     # observations: ObservationsCfg = ObservationsCfg()
     #observations: TheiaTinyObservationCfg = TheiaTinyObservationCfg()
@@ -442,14 +435,14 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 50  # 2 20 48
-        self.episode_length_s = 2
+        self.decimation = 20  # 2 20 48
+        self.episode_length_s = 5.0
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
-        self.sim.render_interval = 5
+        self.sim.render_interval = self.decimation
 
         self.sim.physx.bounce_threshold_velocity = 0.2
         self.sim.physx.bounce_threshold_velocity = 0.01
         self.sim.physx.gpu_found_lost_aggregate_pairs_capacity = 1024 * 1024 * 4
-        self.sim.physx.gpu_total_aggregate_pairs_capacity = 16 * 1024
+        self.sim.physx.gpu_total_aggregate_pairs_capacity = 1024 * 1024
         self.sim.physx.friction_correlation_distance = 0.00625

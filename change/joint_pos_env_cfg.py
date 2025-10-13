@@ -31,7 +31,7 @@ from isaaclab.utils.assets import ISAACLAB_NUCLEUS_DIR
 
 MY_ROBOT_CFG = ArticulationCfg(
     spawn=sim_utils.UsdFileCfg(
-        usd_path=f"/home/roborock/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift/robot_model/arm_description/urdf/R50/r50_v5/r50_v5.usd",
+        usd_path=f"/home/roborock/data/private/sunwenxiu/git/IsaacLab_1/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift_jiulin/robot_model/R50_v5/r50_v5.usd",
         # usd_path=f"/home/xuyang/xuyang_ws/DRL/isaac/IsaacLab-2.0.0/source/isaaclab_tasks/isaaclab_tasks/manager_based/manipulation/lift/robot_model/arm_description/urdf/marm_backup/marm_backup.usd",
         activate_contact_sensors=False,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -47,10 +47,10 @@ MY_ROBOT_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
-            # "M0": 0,    # 锁死
+            "M0": 0,    # 锁死
             # "M1": 1.57,  # 锁死
             # "M2": 1.57,  # 锁死
-            "M3": 3.90,
+            "M3": 3.80,
             "M4": 1.4,
             "M5": 0.0,
             "M6_1": 0.0,
@@ -96,7 +96,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         # Set actions for the specific robot type (CoarseArm)
         self.actions.arm_action = mdp.JointPositionActionCfg(
             #asset_name="robot", joint_names=["panda_joint.*"], scale=0.5, use_default_offset=True
-            asset_name = "robot", joint_names = ["M[34]"],
+            asset_name = "robot", joint_names = ["M[0345]"], scale = 0.3, use_default_offset = True
         )
         
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
@@ -118,7 +118,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         #self.commands.object_pose.body_name = "panda_hand"
         # self.commands.object_pose.body_name = "gripper_finger_link2"
         self.commands.object_pose.body_name = "M6_1_leftfinger_link"
-        cube_size = 0.02
+        cube_size = 0.022
         # Set Cube as object
         self.scene.object= RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
@@ -131,7 +131,47 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
                 sim_utils.CuboidCfg(
                     size=(cube_size, cube_size, cube_size),
                     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0), metallic=0.2),
-                )
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size, cube_size, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size, cube_size * 5, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size, cube_size * 5, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0), metallic=0.2),
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size, cube_size * 5, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size * 5, cube_size, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size * 5, cube_size, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0), metallic=0.2),
+                ),
+                sim_utils.CuboidCfg(
+                    size=(cube_size * 5, cube_size, cube_size),
+                    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+                ),
+                # sim_utils.SphereCfg(
+                #     radius=cube_size / 2,
+                #     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0), metallic=0.2),
+                # ),
+                # sim_utils.SphereCfg(
+                #     radius=cube_size / 2,
+                #     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0), metallic=0.2),
+                # ),
+                # sim_utils.SphereCfg(
+                #     radius=cube_size / 2,
+                #     visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0), metallic=0.2),
+                # ),
             ],
             random_choice=True,
             rigid_props=sim_utils.RigidBodyPropertiesCfg(
@@ -145,7 +185,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
             mass_props=sim_utils.MassPropertiesCfg(mass=0.01),
             collision_props=sim_utils.CollisionPropertiesCfg(),
         ),
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.24, 0.00, 0], rot=[1, 0, 0, 0]),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[0.28, 0.0, 0]),
     )
         # self.scene.object1 = RigidObjectCfg(
         #     prim_path="{ENV_REGEX_NS}/Object1",

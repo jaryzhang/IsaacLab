@@ -141,6 +141,7 @@ class _OnnxPolicyExporter(torch.nn.Module):
         return self.actor(x), h, c
 
     def forward(self, x):
+        # print("onnx: ",self.actor(self.normalizer(x)))
         return self.actor(self.normalizer(x))
     
     # def forward(self, x):
@@ -184,7 +185,7 @@ class _OnnxPolicyExporter(torch.nn.Module):
             # )
         
         #改动
-            dummy_input = torch.zeros(1, 3, 150, 100)
+            dummy_input = torch.zeros(1, 3, 300, 400)
         torch.onnx.export(
             self,
             dummy_input,

@@ -130,8 +130,11 @@ class JointAction(ActionTerm):
     def process_actions(self, actions: torch.Tensor):
         # store the raw actions
         self._raw_actions[:] = actions
+        print("self._raw_actions : ",self._raw_actions)
         # apply the affine transformations
         self._processed_actions = self._raw_actions * self._scale + self._offset
+        # print("scale: ",self._scale)
+        # print("offset: ",self._offset)
         # clip actions
         if self.cfg.clip is not None:
             self._processed_actions = torch.clamp(
@@ -189,6 +192,9 @@ class RelativeJointPositionAction(JointAction):
     def apply_actions(self):
         # add current joint positions to the processed actions
         current_actions = self.processed_actions + self._asset.data.joint_pos[:, self._joint_ids]
+        # print("self.processed_actions : ",self.processed_actions)
+        # print("self._asset.data.joint_pos[:, self._joint_ids] : ",self._asset.data.joint_pos[:, self._joint_ids])
+        # print("current_actions : ",current_actions)
         # set position targets
         self._asset.set_joint_position_target(current_actions, joint_ids=self._joint_ids)
 
