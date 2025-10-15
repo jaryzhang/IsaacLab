@@ -185,7 +185,7 @@ class _OnnxPolicyExporter(torch.nn.Module):
             # )
         
         #改动
-            dummy_input = torch.zeros(1, 3, 300, 400)
+            dummy_input = torch.zeros(1, 4, 300, 400)
         torch.onnx.export(
             self,
             dummy_input,

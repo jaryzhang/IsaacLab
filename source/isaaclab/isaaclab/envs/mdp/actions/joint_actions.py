@@ -130,7 +130,7 @@ class JointAction(ActionTerm):
     def process_actions(self, actions: torch.Tensor):
         # store the raw actions
         self._raw_actions[:] = actions
-        print("self._raw_actions : ",self._raw_actions)
+        # print("self._raw_actions : ",self._raw_actions)
         # apply the affine transformations
         self._processed_actions = self._raw_actions * self._scale + self._offset
         # print("scale: ",self._scale)

@@ -221,7 +221,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         self.scene.ee_frame = FrameTransformerCfg(
             #prim_path="{ENV_REGEX_NS}/Robot/panda_link0",
             prim_path="{ENV_REGEX_NS}/Robot/base_link",
-            debug_vis=False,
+            # debug_vis=True,
             visualizer_cfg=marker_cfg,
             target_frames=[
                 FrameTransformerCfg.FrameCfg(

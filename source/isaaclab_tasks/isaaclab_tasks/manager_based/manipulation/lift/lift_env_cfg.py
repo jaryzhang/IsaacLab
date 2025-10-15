@@ -75,8 +75,33 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         prim_path="/World/light",
         spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=2000.0),
     )
-
+    
     tiled_camera: TiledCameraCfg = TiledCameraCfg(
+        prim_path="{ENV_REGEX_NS}/Robot/M5_wrist_link/Camera_1",
+        # offset=TiledCameraCfg.OffsetCfg(pos=(1.5, 0, 0.2), rot=(0,0,0,-1), convention="world"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(1.66, 0.0, 1.12), rot=((0.63004, 0.32102, 0.32102, 0.63004)), convention="opengl"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0.3, 0, 0.6), rot=(0,-0.4332,0,0.9013), convention="world"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(1.3, 0.0, 0.9), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+        # data_types=["rgb"],
+        # spawn=sim_utils.PinholeCameraCfg(
+        #     focal_length=48.9, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        # ),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.06), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0.055, 0, -0.008), rot=((0.70711,0,-0.70711,0)), convention="opengl"),
+        # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
+        data_types=["rgb"],
+        spawn=sim_utils.PinholeCameraCfg(
+            focal_length=10.6, focus_distance=400.0, horizontal_aperture=36, vertical_aperture=25.45
+        ),
+        # spawn=sim_utils.PinholeCameraCfg(
+        #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
+        # ),
+        width=400,
+        height=300,
+    )
+
+    tiled_camera2: TiledCameraCfg = TiledCameraCfg(
         prim_path="{ENV_REGEX_NS}/Camera_1",
         # offset=TiledCameraCfg.OffsetCfg(pos=(1.5, 0, 0.2), rot=(0,0,0,-1), convention="world"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(1.66, 0.0, 1.12), rot=((0.63004, 0.32102, 0.32102, 0.63004)), convention="opengl"),
@@ -90,7 +115,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         # offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.06), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
         offset=TiledCameraCfg.OffsetCfg(pos=(0.162, -0.0293681, 0.075), rot=((0.4912, 0.50865, -0.50865, -0.4912)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
-        data_types=["rgb"],
+        data_types=["distance_to_image_plane"],
         spawn=sim_utils.PinholeCameraCfg(
             focal_length=10.6, focus_distance=400.0, horizontal_aperture=36, vertical_aperture=25.45
         ),
@@ -100,6 +125,7 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         width=400,
         height=300,
     )
+    
 
     # tiled_camera2: TiledCameraCfg = TiledCameraCfg(
     #     prim_path="{ENV_REGEX_NS}/Camera_2",
@@ -241,7 +267,7 @@ class ResNet18ObservationCfg:
         # actions = ObsTerm(func=mdp.last_action)
         image = ObsTerm(
             func=mdp.image,
-            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb"},
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb","depth_cfg":SceneEntityCfg("tiled_camera2")},
         )
 
         # image = ObsTerm(
@@ -426,7 +452,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the lifting environment."""
 
     # Scene settings
-    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=32, env_spacing=2.5)
+    scene: ObjectTableSceneCfg = ObjectTableSceneCfg(num_envs=64, env_spacing=2.5)
     # Basic settings
     # observations: ObservationsCfg = ObservationsCfg()
     #observations: TheiaTinyObservationCfg = TheiaTinyObservationCfg()
@@ -443,7 +469,7 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
         """Post initialization."""
         # general settings
         self.decimation = 50  # 2 20 48
-        self.episode_length_s = 2
+        self.episode_length_s = 3
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
         self.sim.render_interval = 5

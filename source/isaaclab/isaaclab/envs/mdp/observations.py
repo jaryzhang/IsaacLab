@@ -252,6 +252,7 @@ def image(
     data_type: str = "rgb",
     convert_perspective_to_orthogonal: bool = False,
     normalize: bool = True,
+    depth_cfg : SceneEntityCfg = SceneEntityCfg("tiled_camera2"),
 ) -> torch.Tensor:
     """Images of a specific datatype from the camera sensor.
 
@@ -291,7 +292,17 @@ def image(
     # with open('output_formres9.txt', 'a') as f:
     #     f.write(f"observation_{time1}.png\n")
     # print(f"./IMAGES2/observation_{time1}.png")
+    depth = env.scene.sensors[depth_cfg.name].data.output["distance_to_image_plane"]
+    # print("depth shape:",depth.shape)
+    # depth_np = depth.squeeze(0).squeeze(-1).cpu().numpy()  # shape [H, W]
 
+    # # 归一化到 0~255
+    # depth_norm = (depth_np - depth_np.min()) / (depth_np.max() - depth_np.min())
+    # depth_uint8 = (depth_norm * 255).astype(np.uint8)
+
+    # os.makedirs("depth_images", exist_ok=True)
+    # timestamp = time.time()
+    # cv2.imwrite(f"depth_images/depth_{timestamp}.png", depth_uint8)
     if (data_type == "distance_to_camera") and convert_perspective_to_orthogonal:
         images = math_utils.orthogonalize_perspective_depth(images, sensor.data.intrinsic_matrices)
     # obs_np = rgb_image_tensor.squeeze(0).cpu().numpy() 
@@ -331,7 +342,10 @@ def image(
             pass
         elif "distance_to" in data_type or "depth" in data_type:
             images[images == float("inf")] = 0
-
+    # print("image shape11:",images.shape)
+    #深度图与RGB图拼接
+    images = torch.cat((images,depth),dim=-1)
+    # print("image shape22:",images.shape)
     return images.clone()
 
 
