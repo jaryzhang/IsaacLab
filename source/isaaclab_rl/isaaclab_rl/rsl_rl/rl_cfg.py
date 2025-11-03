@@ -132,7 +132,7 @@ class RslRlPpoAlgorithmCfg:
 class RslRlOnPolicyRunnerCfg:
     """Configuration of the runner for on-policy algorithms."""
 
-    seed: int = 56
+    seed: int = 142
     """The seed for the experiment. Default is 42."""
 
     device: str = "cuda:0"

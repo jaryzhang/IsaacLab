@@ -34,6 +34,8 @@ from isaaclab.assets import RigidObjectCfg
 from isaaclab.sim.spawners.from_files.from_files_cfg import UsdFileCfg
 from isaaclab.sim.schemas.schemas_cfg import RigidBodyPropertiesCfg
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
+import numpy as np
+import omni
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv
@@ -1390,3 +1392,46 @@ def _randomize_prop_by_op(
             f"Unknown operation: '{operation}' for property randomization. Please use 'add', 'scale', or 'abs'."
         )
     return data
+
+def randomize_multiple_sphere_lights(
+    env: "ManagerBasedEnv",
+    env_ids: torch.Tensor,
+    num_lights: int,
+) -> None:
+    """Randomize multiple SphereLight properties (pos, scale, temp, intensity, color)."""
+    if env_ids is None:
+        env_ids = torch.arange(env.scene.num_envs, device=env.device)
+    stage = omni.usd.get_context().get_stage()
+    for env_id in env_ids.tolist():
+        for i in range(num_lights):
+            light_path = f"/World/envs/env_{env_id}/SphereLight_{i}"
+            light_prim = stage.GetPrimAtPath(light_path)
+            if not light_prim.IsValid():
+                alt_path = f"/World/envs/env_{env_id:04d}/SphereLight_{i}"
+                light_prim = stage.GetPrimAtPath(alt_path)
+            if light_prim.IsValid():
+                # 随机位置
+                pos = (
+                    np.random.uniform(0, 3),
+                    np.random.uniform(-2.5, 2.5),
+                    np.random.uniform(4, 6),
+                )
+                light_prim.GetAttribute("xformOp:translate").Set(pos)
+                # 随机缩放
+                scale = np.random.uniform(0.5, 3.2)
+                light_prim.GetAttribute("xformOp:scale").Set((scale, scale, scale))
+                # 随机色温
+                temp = float(np.random.normal(4500, 1500))
+                light_prim.GetAttribute("inputs:colorTemperature").Set(temp)
+                # 随机强度
+                intensity = float(np.random.normal(20000, 2000))
+                light_prim.GetAttribute("inputs:intensity").Set(intensity)
+                # 随机颜色
+                color = (
+                    np.random.uniform(0.6, 0.9),
+                    np.random.uniform(0.6, 0.9),
+                    np.random.uniform(0.6, 0.9),
+                )
+                light_prim.GetAttribute("inputs:color").Set(color)
+            else:
+                print(f"[Warning] SphereLight_{i} not found for env {env_id}")

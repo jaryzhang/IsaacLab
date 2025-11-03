@@ -159,7 +159,7 @@ def main():
             #         for j in range(obs.shape[1]):
             #             f.write(f"obs[{i},{j}] = {obs[i,j].item():.6f}\n")
 
-            obs = obs.permute(0, 3, 1, 2)
+            # obs = obs.permute(0, 3, 1, 2)
             # print("obs1 : ",obs)
             actions = policy(obs)
             # with open("obs1.txt", "w") as f:

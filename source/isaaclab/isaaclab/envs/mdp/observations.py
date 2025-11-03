@@ -24,6 +24,10 @@ import numpy as np
 import cv2
 import os
 import time
+from source.isaaclab.isaaclab.pointnet.models.pointnet_utils import PointNetEncoder, feature_transform_reguliarzer
+import importlib
+from source.isaaclab.isaaclab.pointnet.log.classification.pointnet2_ssg_wo_normals.pointnet2_cls_ssg import get_model as PointNet2ClsMsg
+import open3d as o3d
 
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedEnv, ManagerBasedRLEnv
@@ -439,6 +443,11 @@ class image_features(ManagerTermBase):
         self._model = model_config["model"]()
         self._reset_fn = model_config.get("reset")
         self._inference_fn = model_config["inference"]
+        self._prepare_pointnet_model()
+        # self.fx, self.fy = 525.0, 525.0
+        # self.cx, self.cy = 319.5, 239.5
+        self.fx, self.fy = 117.78,124.95
+        self.cx, self.cy =200,150
 
     def reset(self, env_ids: torch.Tensor | None = None):
         # reset the model if a reset function is provided
@@ -447,10 +456,161 @@ class image_features(ManagerTermBase):
         if self._reset_fn is not None:
             self._reset_fn(self._model, env_ids)
 
+    def depth_to_pointcloud(self,depth_image, fx, fy, cx, cy, rgb_image=None, output_path="pointcloud.ply"):
+        """
+        将深度图转换为点云（可选带颜色）
+        
+        参数:
+            depth_image : np.ndarray
+                深度图（H, W），单位为米。
+            fx, fy, cx, cy : float
+                相机内参。
+            rgb_image : np.ndarray, optional
+                彩色图（H, W, 3），与深度图对齐。
+            output_path : str
+                点云保存路径。
+        """
+        assert len(depth_image.shape) == 2, "深度图必须是单通道 (H, W)"
+        height, width = depth_image.shape
+        u, v = np.meshgrid(np.arange(width), np.arange(height))
+        
+        # 深度图中无效值置0（避免NaN）
+        depth = np.nan_to_num(depth_image, nan=0.0)
+        # depth = (depth.max() - depth)
+        # print(depth_image.dtype)
+        # print("min, max, median:", np.nanmin(depth_image), np.nanmax(depth_image), np.nanmedian(depth_image))
+        # print("non-zero fraction:", np.count_nonzero(~np.isnan(depth_image) & (depth_image!=0)) / depth_image.size)
+        mask = depth > 0  # 有效深度
+        
+        # 反投影到3D空间
+        Z = depth[mask]
+        X = (u[mask] - cx) * Z / fx
+        Y = (v[mask] - cy) * Z / fy
+        points = np.stack((X, -Y, Z), axis=-1)
+
+        def save_ply(points, colors=None, output_path="pointcloud.ply"):
+            """
+            保存点云为 PLY 文件
+            参数:
+                points: (N, 3) numpy 数组
+                colors: (N, 3) numpy 数组 (0~255 或 0~1)
+                output_path: 输出文件路径
+            """
+            # 创建 open3d 点云对象
+            pcd = o3d.geometry.PointCloud()
+            pcd.points = o3d.utility.Vector3dVector(points)
+
+            if colors is not None:
+                if colors.max() > 1.0:
+                    colors = colors / 255.0  # 归一化到 [0,1]
+                pcd.colors = o3d.utility.Vector3dVector(colors)
+
+            # 保存为 PLY 文件
+            o3d.io.write_point_cloud(output_path, pcd)
+            print(f"✅ 点云已保存到: {output_path}")
+        
+        # save_ply(points, colors=None, output_path=output_path.replace(".ply","_0.ply"))
+        theta = np.deg2rad(1)
+        R_x = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), -np.sin(theta)],
+            [0, np.sin(theta),  np.cos(theta)]
+        ])
+
+        rotated_points = points @ R_x.T
+        # save_ply(rotated_points, colors=None, output_path=output_path.replace(".ply","_1.ply"))
+        # save_ply(points, colors=None, output_path=output_path)
+        # ===== 距离筛选部分 =====
+        points = rotated_points[rotated_points[:,2]<0.16]
+        points = points[points[:,1]>-0.066]
+        # save_ply(points, colors=None, output_path=output_path.replace(".ply","_2.ply"))
+
+        # def voxel_down_sample_fixed(points, voxel_size=2.0, num_points=1024, seed=None):
+        #     """
+        #     对点云进行体素下采样，并确保输出固定数量的点。
+
+        #     参数:
+        #         points: np.ndarray, shape [N, 3]
+        #         voxel_size: float, 体素大小
+        #         num_points: int, 输出固定点数
+        #         seed: int or None, 随机种子（可选）
+
+        #     返回:
+        #         down_points: np.ndarray, shape [num_points, 3]
+        #     """
+        #     if len(points) == 0:
+        #         raise ValueError("Input point cloud is empty!")
+
+        #     if seed is not None:
+        #         np.random.seed(seed)
+        #     decay_rate = voxel_size / 2.0
+        #     dist = np.linalg.norm(points, axis=1)
+        #     p = np.exp(-dist / decay_rate)   # 近处概率大
+        #     p /= p.sum()
+        #     indices = np.random.choice(len(points), num_points, replace=False, p=p)
+        #     down_points = points[indices]
+
+        #     # Step 2️⃣: 固定点数采样
+        #     N = down_points.shape[0]
+
+        #     if N >= num_points:
+        #         # 随机采样固定数量的点
+        #         indices = np.random.choice(N, num_points, replace=False)
+        #         down_points = down_points[indices]
+        #     else:
+        #         # 点数不足则随机重复补齐
+        #         extra_indices = np.random.choice(N, num_points - N, replace=True)
+        #         down_points = np.concatenate([down_points, down_points[extra_indices]], axis=0)
+            
+        #     return down_points
+
+        def voxel_down_sample_fixed(points, voxel_size=2.0, num_points=1024, seed=None):
+            """
+            对点云进行体素下采样，并确保输出固定数量的点。
+
+            参数:
+                points: np.ndarray, shape [N, 3]
+                voxel_size: float, 体素大小
+                num_points: int, 输出固定点数
+                seed: int or None, 随机种子（可选）
+
+            返回:
+                down_points: np.ndarray, shape [num_points, 3]
+            """
+            if len(points) == 0:
+                # 返回一个全零点云（或可选 raise）
+                return np.zeros((num_points, 3), dtype=np.float32)
+
+            if seed is not None:
+                np.random.seed(seed)
+
+            decay_rate = voxel_size / 2.0
+            dist = np.linalg.norm(points, axis=1)
+            p = np.exp(-dist / decay_rate)   # 近处概率大
+            p /= p.sum()
+
+            # ✅ 修复点：若点数不足，则允许放回采样
+            replace_flag = len(points) < num_points
+            indices = np.random.choice(len(points), num_points, replace=replace_flag, p=p)
+            down_points = points[indices]
+
+            # ✅ 第二步其实可以省略，但如果你想保持逻辑清晰：
+            N = down_points.shape[0]
+            if N < num_points:
+                extra_indices = np.random.choice(N, num_points - N, replace=True)
+                down_points = np.concatenate([down_points, down_points[extra_indices]], axis=0)
+
+            return down_points
+                
+        points = voxel_down_sample_fixed(points, voxel_size=5.0)
+        # save_ply(points, colors=None, output_path=output_path.replace(".ply","_downsampled8.ply"))
+        return points
+
     def __call__(
         self,
         env: ManagerBasedEnv,
         sensor_cfg: SceneEntityCfg = SceneEntityCfg("tiled_camera"),
+        depth_cfg: SceneEntityCfg = SceneEntityCfg("tiled_camera2"),
         data_type: str = "rgb",
         convert_perspective_to_orthogonal: bool = False,
         model_zoo_cfg: dict | None = None,
@@ -459,24 +619,74 @@ class image_features(ManagerTermBase):
         inference_kwargs: dict | None = None,
     ) -> torch.Tensor:
         # obtain the images from the sensor
-        image_data = image(
-            env=env,
-            sensor_cfg=sensor_cfg,
-            data_type=data_type,
-            convert_perspective_to_orthogonal=convert_perspective_to_orthogonal,
-            normalize=False,  # we pre-process based on model
-        )
+        # image_data = image(
+        #     env=env,
+        #     sensor_cfg=sensor_cfg,
+        #     data_type=data_type,
+        #     convert_perspective_to_orthogonal=convert_perspective_to_orthogonal,
+        #     normalize=False,  # we pre-process based on model
+        # )
+        sensor: TiledCamera | Camera | RayCasterCamera = env.scene.sensors[sensor_cfg.name]
+
+    # obtain the input image
+        images = sensor.data.output[data_type]
         # store the device of the image
-        image_device = image_data.device
+        image_device = images.device
         # forward the images through the model
-        features = self._inference_fn(self._model, image_data, **(inference_kwargs or {}))
-        # with open('output_5142.txt', 'a') as f:
-        #     f.write(f"obs6 m: {(features.detach().mean().item())}\n")
-        #     f.write(f"obs6 s: {(features.detach().std().item())}\n")
-        # print("obs6 m:",(features.detach().mean().item()))
-        # print("obs6 s:",(features.detach().std().item()))
-        # move the features back to the image device
-        # features = features*1000
+        features = self._inference_fn(self._model, images, **(inference_kwargs or {}))
+    
+            
+        depth = env.scene.sensors[depth_cfg.name].data.output["distance_to_image_plane"]
+        # print("depth shape:",depth.shape)
+        depth_np = depth.squeeze(0).squeeze(-1).cpu().numpy()  # shape [H, W]
+
+        batch_points = []  # 用于存每个环境的点云 tensor
+
+        for i in range(depth_np.shape[0]):  # 遍历每个环境
+            # 取出第 i 个环境的深度图 (H,W)
+            depth_img = depth_np[i, :, :]
+
+            # 归一化到 0~255
+            # depth_norm = (depth_img - depth_img.min()) / (depth_img.max() - depth_img.min())
+            # depth_uint8 = (depth_norm * 255).astype(np.uint8)
+            # print("depth_uint8 shape:",depth_uint8.shape)
+            # 转点云
+            points_i = self.depth_to_pointcloud(depth_img, self.fx, self.fy, self.cx, self.cy)
+            # print("points_i shape:",points_i.shape)
+            # 转成 tensor 并放到 device
+            points_i = torch.tensor(points_i, dtype=torch.float32).to(image_device)  # [num_points,3]
+
+            batch_points.append(points_i)
+
+        # 现在 batch_points 是长度 num_envs 的列表，每个 [num_points_i,3]
+        # print("num_envs:",len(batch_points))
+
+        # depth_features_list = []
+
+        # with torch.no_grad():
+        #     for points_i in batch_points:
+        #         # PointNet 期望输入 [B, 3, N]
+
+        #         pts_input = points_i.unsqueeze(0).permute(0,2,1).contiguous()  # [1,3,N]
+        #         # print("pts_input shape:",pts_input.shape)
+        #         dfeatures = self._point_encoder(pts_input)  # [1, feature_dim]
+        #         depth_features_list.append(dfeatures.squeeze(0))  # [feature_dim]
+
+        # depth_features_batch = torch.stack(depth_features_list, dim=0)
+        batch_points_tensor = torch.stack(batch_points, dim=0)
+
+        pts_input = batch_points_tensor.permute(0, 2, 1).contiguous()
+
+        with torch.no_grad():
+            depth_features_batch = self._point_encoder(pts_input)
+        # 拼成 [num_envs, feature_dim]
+          # L2 范数归一化
+        img_feat_norm = torch.nn.functional.normalize(features, p=2, dim=1)
+        
+        pc_feat_norm = torch.nn.functional.normalize(depth_features_batch, p=2, dim=1) 
+        
+        features = torch.cat((img_feat_norm,pc_feat_norm),dim=-1)
+        
         return features.detach().to(image_device)
 
     """
@@ -575,6 +785,72 @@ class image_features(ManagerTermBase):
 
         # return the model, preprocess and inference functions
         return {"model": _load_model, "inference": _inference}
+    
+    def _prepare_pointnet_model(self) :
+        import torch.nn as nn
+        # experiment_dir = '/home/roborock/IsaacLab' 
+        # classifier = MODEL.get_model(13).cuda()
+        # checkpoint = torch.load(str(experiment_dir) + '/best_model.pth')
+        # classifier.load_state_dict(checkpoint['model_state_dict'])
+        # classifier = classifier.eval()
+
+        # self._point_encoder = classifier.feat
+        # self._point_encoder.eval()
+        # self._point_encoder.cuda()
+
+        experiment_dir = '/home/roborock/IsaacLab'
+        ckpt_path = f"{experiment_dir}/best_model.pth"
+
+        # ✅ 模型输入通道：原模型是 normal_channel=True（6 通道）
+        classifier = PointNet2ClsMsg(num_class=40, normal_channel=False).cuda()  
+
+        # ✅ 加载 checkpoint
+        checkpoint = torch.load(ckpt_path, map_location='cuda')
+
+        # 拿出权重字典
+        state_dict = checkpoint['model_state_dict']
+
+        # # ✅ 动态修正输入通道权重 mismatch（从 6 -> 3）
+        # for key in list(state_dict.keys()):
+        #     if 'sa1' in key and 'weight' in key and state_dict[key].dim() == 4:
+        #         if state_dict[key].shape[1] == 6:
+        #             print(f"[INFO] Trimming {key} from 6→3 input channels.")
+        #             state_dict[key] = state_dict[key][:, :3, :, :]  # 截取前3个通道 (XYZ)
+
+        # # ✅ 忽略分类头不匹配部分
+        # ignore_keys = ['fc3.weight', 'fc3.bias']
+        # for k in ignore_keys:
+        #     if k in state_dict:
+        #         print(f"[INFO] Removing {k} from checkpoint.")
+        #         del state_dict[k]
+
+        # ✅ 加载修正后的权重
+        classifier.load_state_dict(state_dict, strict=False)
+        # print("[INFO] Missing keys:", missing)
+        # print("[INFO] Unexpected keys:", unexpected)
+
+        classifier.eval()
+
+        # ✅ 仅保留特征提取部分（encoder）
+        class PointNet2Encoder(nn.Module):
+            def __init__(self, base_model):
+                super().__init__()
+                self.normal_channel = True  # 我们只输入 XYZ
+                self.sa1 = base_model.sa1
+                self.sa2 = base_model.sa2
+                self.sa3 = base_model.sa3
+
+            def forward(self, xyz):
+                B, _, _ = xyz.shape
+                norm = None
+                l1_xyz, l1_points = self.sa1(xyz, norm)
+                l2_xyz, l2_points = self.sa2(l1_xyz, l1_points)
+                l3_xyz, l3_points = self.sa3(l2_xyz, l2_points)
+                features = l3_points.view(B, 1024)
+                return features
+
+        self._point_encoder = PointNet2Encoder(classifier).cuda().eval()
+        
 
 
 """

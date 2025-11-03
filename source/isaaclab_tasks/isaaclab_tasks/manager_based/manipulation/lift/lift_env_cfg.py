@@ -72,8 +72,8 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
 
     # lights
     light = AssetBaseCfg(
-        prim_path="/World/light",
-        spawn=sim_utils.DomeLightCfg(color=(0.75, 0.75, 0.75), intensity=2000.0),
+        prim_path="{ENV_REGEX_NS}/SphereLight_0",
+        spawn=sim_utils.SphereLightCfg(color=(0.75, 0.75, 0.75), intensity=2000.0),
     )
     
     tiled_camera: TiledCameraCfg = TiledCameraCfg(
@@ -88,11 +88,11 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         # ),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.9, 0.0, 0.5), rot=((0.63281, 0.31551, 0.31551, 0.63281)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0, 0.0, 0.06), rot=((-0.52133, -0.47771, 0.47771, 0.52133)), convention="opengl"),
-        offset=TiledCameraCfg.OffsetCfg(pos=(0.055, 0, -0.008), rot=((0.70711,0,-0.70711,0)), convention="opengl"),
+        offset=TiledCameraCfg.OffsetCfg(pos=(0.055, 0, -0.015), rot=((0.70711,0,-0.70711,0)), convention="opengl"),
         # offset=TiledCameraCfg.OffsetCfg(pos=(0.6, 0.0, 0.3), rot=((0.6509, 0.27629, 0.27629, 0.6509)), convention="opengl"),
         data_types=["rgb"],
         spawn=sim_utils.PinholeCameraCfg(
-            focal_length=10.6, focus_distance=400.0, horizontal_aperture=36, vertical_aperture=25.45
+            focal_length=8.0, focus_distance=200.0, horizontal_aperture=36, vertical_aperture=25.45
         ),
         # spawn=sim_utils.PinholeCameraCfg(
         #     focal_length=1.8, focus_distance=400.0, horizontal_aperture=20.955, clipping_range=(0.1, 20.0)
@@ -100,6 +100,26 @@ class ObjectTableSceneCfg(InteractiveSceneCfg):
         width=400,
         height=300,
     )
+
+    # tiled_camera: TiledCameraCfg = TiledCameraCfg(
+    #     prim_path="{ENV_REGEX_NS}/Robot/M5_wrist_link/gripper_camera",
+    #     offset=TiledCameraCfg.OffsetCfg(
+    #         pos=(0.06151, 0.00255, -0.0055),
+    #         rot=((0.8944, 0.0, -0.4472, 0.0)),
+    #         convention="opengl"
+    #     ),
+    #     data_types=["rgb"],
+    #     spawn=sim_utils.PinholeCameraCfg(
+    #         focal_length=8.0, 
+    #         focus_distance=200.0, 
+    #         horizontal_aperture=36, 
+    #         vertical_aperture=25.45,
+
+    #     ),
+    #     width=400,
+    #     height=300,
+    #     debug_vis=False
+    # )
 
     tiled_camera2: TiledCameraCfg = TiledCameraCfg(
         prim_path="{ENV_REGEX_NS}/Camera_1",
@@ -265,15 +285,16 @@ class ResNet18ObservationCfg:
         # object_position = ObsTerm(func=mdp.object_position_in_robot_root_frame)
         # target_object_position = ObsTerm(func=mdp.generated_commands, params={"command_name": "object_pose"})
         # actions = ObsTerm(func=mdp.last_action)
-        image = ObsTerm(
-            func=mdp.image,
-            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb","depth_cfg":SceneEntityCfg("tiled_camera2")},
-        )
 
         # image = ObsTerm(
-        #     func=mdp.image_features,
-        #     params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb","model_name": "resnet18"}
+        #     func=mdp.image,
+        #     params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb","depth_cfg":SceneEntityCfg("tiled_camera2")},
         # )
+
+        image = ObsTerm(
+            func=mdp.image_features,
+            params={"sensor_cfg": SceneEntityCfg("tiled_camera"), "data_type": "rgb","model_name": "resnet18","depth_cfg":SceneEntityCfg("tiled_camera2")},
+        )
 
         # joint_pos = ObsTerm(func=mdp.joint_pos_rel)
 
@@ -320,11 +341,17 @@ class EventCfg:
 
             "pose_range": {
                 "x": (0.02, 0.03),
-                "y": (0, 0),
+                "y": (-0.01, 0.01),
                 "z": (0.0, 0.0),
             },
             "velocity_range": {},
         },
+    )
+
+    randomize_lighting_reset = EventTerm(
+        func=mdp.randomize_multiple_sphere_lights,
+        mode="reset",
+        params={"num_lights": 1},
     )
 
 
@@ -468,8 +495,8 @@ class LiftEnvCfg(ManagerBasedRLEnvCfg):
     def __post_init__(self):
         """Post initialization."""
         # general settings
-        self.decimation = 50  # 2 20 48
-        self.episode_length_s = 3
+        self.decimation = 20  # 2 20 48
+        self.episode_length_s = 5
         # simulation settings
         self.sim.dt = 0.01  # 100Hz
         self.sim.render_interval = 5

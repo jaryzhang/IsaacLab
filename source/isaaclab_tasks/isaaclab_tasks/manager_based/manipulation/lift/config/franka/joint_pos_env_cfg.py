@@ -47,7 +47,7 @@ MY_ROBOT_CFG = ArticulationCfg(
     ),
     init_state=ArticulationCfg.InitialStateCfg(
         joint_pos={
-            # "M0": 0,    # 锁死
+            "M0": 0.0,    # 锁死
             # "M1": 1.57,  # 锁死
             # "M2": 1.57,  # 锁死
             "M3": 3.90,
@@ -96,7 +96,7 @@ class CoarseArmCubeLiftEnvCfg(LiftEnvCfg):
         # Set actions for the specific robot type (CoarseArm)
         self.actions.arm_action = mdp.JointPositionActionCfg(
             #asset_name="robot", joint_names=["panda_joint.*"], scale=0.5, use_default_offset=True
-            asset_name = "robot", joint_names = ["M[34]"],
+            asset_name = "robot", joint_names = ["M[034]"],
         )
         
         self.actions.gripper_action = mdp.BinaryJointPositionActionCfg(
